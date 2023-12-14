@@ -30,3 +30,34 @@ type CurriculumModel struct {
 	Ok         bool       `json:"ok"`
 	Curriculum Curriculum `json:"curriculum"`
 }
+
+type CourseDetailResponse struct {
+	CourseNo   string `json:"courseNo"`
+	CourseName string `json:"courseName"`
+	GroupName  string `json:"groupName"`
+	IsPass     bool   `json:"isPass"`
+	X          int    `json:"x,omitempty"`
+	Y          int    `json:"y,omitempty"`
+}
+
+type CategoryDetail struct {
+	SummaryCredits  int                    `json:"summaryCredit"`
+	RequiredCredits int                    `json:"requiredCredits"`
+	CourseList      []CourseDetailResponse `json:"courseList"`
+}
+
+type CategoryResponse struct {
+	SummaryCredits  int            `json:"summaryCredit"`
+	RequiredCredits int            `json:"requiredCredits"`
+	CoreCategory    CategoryDetail `json:"coreCategory"`
+	MajorCategory   CategoryDetail `json:"majorCategory"`
+	GECategory      CategoryDetail `json:"geCategory"`
+	FreeCategory    CategoryDetail `json:"freeCategory"`
+}
+
+type Credits struct {
+	CoreCredits  int
+	MajorCredits int
+	GeCredits    int
+	FreeCredits  int
+}
