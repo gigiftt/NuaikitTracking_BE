@@ -18,6 +18,170 @@ import (
 
 var PASS_GRADE = []string{"A", "B", "C", "D", "S"}
 
+var ELECTIVE_NORMAL_PLAN = `{
+    "curriculum":{
+       "geGroups":[
+        {
+            "groupName": "Learner Person",
+            "electiveCourses":[
+               {
+                  "recommendSemester":2,
+                  "recommendYear":3
+               }
+            ]
+         },
+         {
+            "groupName": "Co-Creator",
+            "electiveCourses":[
+               {
+                  "recommendSemester":1,
+                  "recommendYear":3
+               }
+            ]
+         },
+          {
+             "groupName":"Elective",
+             "electiveCourses":[
+                {
+                   "recommendSemester":2,
+                   "recommendYear":1
+                },
+                {
+                   "recommendSemester":1,
+                   "recommendYear":2
+                },
+                {
+                   "recommendSemester":2,
+                   "recommendYear":3
+                }
+             ]
+          }
+       ],
+       "coreAndMajorGroups":[
+        {
+            "groupName": "Major Elective",
+            "electiveCourses":[
+               {
+                  "recommendSemester":1,
+                  "recommendYear":3
+               },
+               {
+                "recommendSemester":2,
+                "recommendYear":3
+             },
+             {
+                "recommendSemester":1,
+                "recommendYear":4
+             },
+             {
+                "recommendSemester":1,
+                "recommendYear":4
+             },
+             {
+                "recommendSemester":1,
+                "recommendYear":4
+             },
+             {
+                "recommendSemester":2,
+                "recommendYear":4
+             }
+            ]
+         }
+       ],
+       "freeGroups":[
+        {
+            "groupName": "Free Elective",
+            "electiveCourses":[
+               {
+                  "recommendSemester":1,
+                  "recommendYear":4
+               },
+               {
+                "recommendSemester":2,
+                "recommendYear":4
+             }]}
+       ]
+    }
+ }`
+
+var ELECTIVE_COOP_PLAN = `{
+    "curriculum":{
+       "geGroups":[
+        {
+            "groupName": "Learner Person",
+            "electiveCourses":[
+               {
+                  "recommendSemester":2,
+                  "recommendYear":3
+               }
+            ]
+         },
+         {
+            "groupName": "Co-Creator",
+            "electiveCourses":[
+               {
+                  "recommendSemester":1,
+                  "recommendYear":3
+               }
+            ]
+         },
+          {
+             "groupName":"Elective",
+             "electiveCourses":[
+                {
+                   "recommendSemester":2,
+                   "recommendYear":1
+                },
+                {
+                   "recommendSemester":1,
+                   "recommendYear":2
+                },
+                {
+                   "recommendSemester":2,
+                   "recommendYear":3
+                }
+             ]
+          }
+       ],
+       "coreAndMajorGroups":[
+        {
+            "groupName": "Major Elective",
+            "electiveCourses":[
+               {
+                  "recommendSemester":1,
+                  "recommendYear":3
+               },
+               {
+                "recommendSemester":2,
+                "recommendYear":3
+             },
+             {
+                "recommendSemester":2,
+                "recommendYear":3
+             },
+             {
+                "recommendSemester":2,
+                "recommendYear":4
+             }
+            ]
+         }
+       ],
+       "freeGroups":[
+        {
+            "groupName": "Free Elective",
+            "electiveCourses":[
+               {
+                  "recommendSemester":2,
+                  "recommendYear":4
+               },
+               {
+                "recommendSemester":2,
+                "recommendYear":4
+             }]}
+       ]
+    }
+ }`
+
 // use godot package to load/read the .env file and
 // return the value of the key
 func goDotEnvVariable(key string) string {
@@ -121,6 +285,50 @@ func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) mod
 	}
 
 	return curriculum
+
+}
+
+func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYear string, studySemester string) (string, model.CurriculumModel) {
+
+	client := &http.Client{}
+
+	cpeAPI := goDotEnvVariable("CPE_API_URL")
+	cpeToken := goDotEnvVariable("CPE_API_TOKEN")
+
+	url := cpeAPI + "/curriculum"
+	bearer := "Bearer " + cpeToken
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	req.Header.Add("Authorization", bearer)
+	q := req.URL.Query()
+	q.Add("year", year)
+	q.Add("curriculumProgram", curriculumProgram)
+	q.Add("isCOOPPlan", isCOOP)
+	q.Add("studyYear", studyYear)
+	q.Add("studySemester", studySemester)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	c, error := ioutil.ReadAll(resp.Body)
+	if error != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	term := model.CurriculumModel{}
+	err = json.Unmarshal(c, &term)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	return string(c), term
 
 }
 
@@ -267,18 +475,6 @@ func getCategoryTemplate(c model.CurriculumModel) string {
 			reqCredit += c.Credits
 		}
 
-		// for _, c := range g.ElectiveCourses {
-
-		// 	detail := getCourseDetail(c.CourseNo)
-		// 	elecCourseList = append(elecCourseList, model.CourseDetailResponse{
-		// 		CourseNo:   c.CourseNo,
-		// 		CourseName: detail.CourseDetail[0].CourseNameEN,
-		// 		GroupName:  groupName,
-		// 		IsPass:     false,
-		// 	})
-
-		// }
-
 		if groupName == "Core" {
 			coreCategory = append(coreCategory, model.CategoryDetail{
 				GroupName:           groupName,
@@ -332,17 +528,6 @@ func getCategoryTemplate(c model.CurriculumModel) string {
 			reqCredit += c.Credits
 		}
 
-		// for _, c := range g.ElectiveCourses {
-
-		// 	detail := getCourseDetail(c.CourseNo)
-		// 	elecCourseList = append(elecCourseList, model.CourseDetailResponse{
-		// 		CourseNo:   c.CourseNo,
-		// 		CourseName: detail.CourseDetail[0].CourseNameEN,
-		// 		GroupName:  groupName,
-		// 		IsPass:     false,
-		// 	})
-		// }
-
 		geCategory = append(geCategory, model.CategoryDetail{
 			GroupName:           groupName,
 			RequiredCreditsNeed: reqCredit,
@@ -371,6 +556,720 @@ func getCategoryTemplate(c model.CurriculumModel) string {
 
 	return string(t)
 
+}
+
+func getTermTemplate(year string, curriculumProgram string, isCOOP string) string {
+
+	yearList := []model.Details{}
+
+	i := 1
+	// loop year
+	for i <= 4 {
+
+		termList := []model.StudyYearDetails{}
+
+		j := 1
+		// loop term
+		for j <= 2 {
+
+			x := i * 2
+			if j == 1 {
+				x = x - 1
+			}
+
+			y := 1
+
+			courseList := []model.CourseDetailResponse{}
+
+			termString, _ := getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i), strconv.Itoa(j))
+
+			core := gjson.Get(termString, `curriculum.coreAndMajorGroups.0.requiredCourses.#.courseNo`).Array()
+			for _, c := range core {
+
+				detail := getCourseDetail(c.String())
+
+				courseList = append(courseList, model.CourseDetailResponse{
+					CourseNo:   detail.CourseDetail[0].CourseNo,
+					CourseName: detail.CourseDetail[0].CourseNameEN,
+					GroupName:  "Core",
+					IsPass:     false,
+					X:          x,
+					Y:          y,
+				})
+				y++
+			}
+
+			major := gjson.Get(termString, `curriculum.coreAndMajorGroups.1.requiredCourses.#.courseNo`).Array()
+			for _, c := range major {
+
+				detail := getCourseDetail(c.String())
+
+				courseList = append(courseList, model.CourseDetailResponse{
+					CourseNo:   detail.CourseDetail[0].CourseNo,
+					CourseName: detail.CourseDetail[0].CourseNameEN,
+					GroupName:  "Major Required",
+					IsPass:     false,
+					X:          x,
+					Y:          y,
+				})
+				y++
+			}
+
+			numberGE := gjson.Get(termString, `curriculum.geGroups.#`).Int()
+			n := 0
+			for n < int(numberGE) {
+				ge := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.requiredCourses.#.courseNo`).Array()
+				for _, c := range ge {
+
+					detail := getCourseDetail(c.String())
+
+					courseList = append(courseList, model.CourseDetailResponse{
+						CourseNo:   detail.CourseDetail[0].CourseNo,
+						CourseName: detail.CourseDetail[0].CourseNameEN,
+						GroupName:  "Core",
+						IsPass:     false,
+						X:          x,
+						Y:          y,
+					})
+					y++
+				}
+				n++
+			}
+
+			termList = append(termList, model.StudyYearDetails{
+				StudySemester: j,
+				SummaryCredit: 0,
+				CourseList:    courseList,
+			})
+
+			j++
+		}
+
+		yearList = append(yearList, model.Details{
+			StudyYear:        i,
+			StudyYearDetails: termList,
+		})
+		i++
+	}
+
+	plan := "Normal"
+	if isCOOP == "true" {
+		plan = "COOP"
+	}
+
+	termTemplate := model.TermResponse{
+		Plan:    plan,
+		Details: yearList,
+	}
+
+	t, err := json.Marshal(termTemplate)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	return string(t)
+}
+
+func insertRow(template *[][]string, index int, corepList []string) {
+
+	for col := range *template {
+		row := index
+
+		if len((*template)[col]) <= index {
+
+			(*template)[col] = append((*template)[col], "000000")
+		} else {
+
+			if slices.Contains[[]string](corepList, (*template)[col][index]) {
+				row = index + 1
+			}
+			(*template)[col] = slices.Insert[[]string]((*template)[col], row, "000000")
+		}
+	}
+
+}
+
+func find_Yindex(templateArr [][]string, course string) int {
+
+	for i := 0; i < len(templateArr); i++ {
+		index := slices.Index[[]string](templateArr[i], course)
+		if index != -1 {
+			return index
+		}
+	}
+	return -1
+}
+
+func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPreList []string, havePreList []string, corequisite string, courseNo string, prerequisites []gjson.Result) ([][]string, []string, []string, []string, []string) {
+
+	log.Println(courseNo)
+
+	prerequisitesList := []string{}
+
+	if slices.Contains[[]string](templateArr[x], corequisite) {
+
+		corequisiteList = append(corequisiteList, []string{courseNo}...)
+		row := slices.Index[[]string](templateArr[x], corequisite)
+
+		if row+1 < len(templateArr[x]) {
+			if templateArr[x][row+1] != "000000" {
+				insertRow(&templateArr, row+1, corequisiteList)
+
+			}
+		} else {
+			insertRow(&templateArr, row+1, corequisiteList)
+		}
+
+		templateArr[x][row+1] = courseNo
+
+	} else {
+
+		if len(prerequisites) == 0 {
+			// have 0 prerequisites
+			noPreList = append(noPreList, courseNo)
+
+		} else if len(prerequisites) == 1 {
+			// have 1 prerequisites
+			havePreList = append(havePreList, courseNo)
+			prerequisitesList = append(prerequisitesList, prerequisites[0].String())
+
+			preRow := 0
+			preCol := 0
+
+			// find position of prerequisites
+			for col := range templateArr {
+				row := slices.Index[[]string](templateArr[col], prerequisites[0].String())
+				if row != -1 {
+					preRow = row
+					preCol = col
+					break
+				}
+			}
+
+			nowRow := preRow
+
+			if x == preCol+1 {
+				// pre อยู่คอลัมก่อนหน้า
+				if templateArr[x][preRow] != "000000" {
+					if preRow == 0 {
+						insertRow(&templateArr, preRow, corequisiteList)
+
+					} else {
+						if templateArr[x][preRow-1] == "000000" {
+							nowRow = preRow - 1
+						} else {
+							insertRow(&templateArr, preRow, corequisiteList)
+
+						}
+					}
+
+				}
+				templateArr[x][nowRow] = courseNo
+
+			} else {
+
+				// pre ไม่ได้อยู่คอลัมก่อนหน้า
+				available := true
+				for o := preCol + 1; o < x+1; o++ {
+					if templateArr[o][preRow] != "000000" {
+						available = false
+						break
+					}
+				}
+
+				if !available {
+
+					insertRow(&templateArr, preRow, corequisiteList)
+
+				}
+				templateArr[x][nowRow] = courseNo
+
+				for v := preCol + 1; v < x; v++ {
+					templateArr[v][nowRow] = "111111"
+				}
+
+			}
+
+		} else {
+
+			// have 2 prerequisites
+			havePreList = append(havePreList, courseNo)
+			prerequisitesList = append(prerequisitesList, prerequisites[0].String())
+			prerequisitesList = append(prerequisitesList, prerequisites[1].String())
+
+			// find position of prerequisites
+			preRow1 := 0
+			preCol1 := 0
+
+			preRow2 := 0
+			preCol2 := 0
+			preCourseNO2 := ""
+			for _, p := range prerequisites {
+				if slices.Contains[[]string](havePreList, p.String()) {
+					for col := range templateArr {
+						row := slices.Index[[]string](templateArr[col], p.String())
+						if row != -1 {
+							preRow1 = row
+							preCol1 = col
+							break
+						}
+					}
+				} else {
+					for col := range templateArr {
+						row := slices.Index[[]string](templateArr[col], p.String())
+						if row != -1 {
+							if preCourseNO2 == "" {
+								preRow2 = row
+								preCol2 = col
+								preCourseNO2 = p.String()
+
+							} else {
+								preRow1 = row
+								preCol1 = col
+
+							}
+							break
+						}
+					}
+				}
+			}
+
+			if preRow1+1 == preRow2 && preCol1 == preCol2 && templateArr[x][preRow1] == "000000" {
+				templateArr[x][preRow1] = courseNo
+			} else {
+
+				// เช็คว่าตต pre1 ไปจน column ล่าสุด มี course ไหนมี corequisite ไหม
+				haveCoreq := true
+				for o := preCol1; o < x; o++ {
+					if slices.Contains[[]string](corequisiteList, templateArr[o][preRow1+1]) {
+						haveCoreq = false
+						break
+					}
+				}
+
+				if !haveCoreq {
+
+					// มี course ที่มี corequisite
+					// เพิ่ม 2 แถวลงใต้ pre1 => pre1Row + 1
+
+					// เช็คว่าช่องต่อจาก pre1 ว่างไหม
+					available := true
+					for o := preCol1 + 1; o < x+1; o++ {
+						if templateArr[o][preRow1] != "000000" {
+							available = false
+							break
+						}
+					}
+
+					if available {
+						// ช่องต่อจาก pre1 ว่าง
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						templateArr[x][preRow1] = courseNo
+						templateArr[preCol2][preRow1+2] = preCourseNO2
+						templateArr[preCol2][preRow2+2] = "000000"
+
+						for v := preCol2 + 1; v < x; v++ {
+
+							templateArr[v][preRow1+2] = "111111"
+
+						}
+
+					} else {
+
+						// ช่องต่อจาก pre1 ไม่ว่าง
+						// ไปใส่ช่องของ pre2 แทน
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						templateArr[x][preRow1+2] = courseNo
+						templateArr[preCol2][preRow1+2] = preCourseNO2
+						templateArr[preCol2][preRow2+2] = "000000"
+
+						for v := preCol2 + 1; v < x; v++ {
+
+							templateArr[v][preRow1+2] = "111111"
+
+						}
+					}
+
+				} else {
+
+					// ไม่มี course ไหนมี corequisite
+					// เพิ่มแถวลงใต้ pre1 => pre1Row + 1
+					available := true
+					for o := preCol1 + 1; o < x+1; o++ {
+						if templateArr[o][preRow1] != "000000" {
+							available = false
+							break
+						}
+					}
+
+					if available {
+
+						// ช่องต่อจาก pre1 ว่าง
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						templateArr[x][preRow1] = courseNo
+						templateArr[preCol2][preRow1+1] = preCourseNO2
+						templateArr[preCol2][preRow2+1] = "000000"
+
+						for v := preCol2 + 1; v < x; v++ {
+
+							templateArr[v][preRow1+1] = "111111"
+
+						}
+
+					} else {
+
+						// ช่องต่อจาก pre1 ไม่ว่าง
+						// ไปใส่ช่องของ pre2 แทน
+						insertRow(&templateArr, preRow1+1, corequisiteList)
+						templateArr[x][preRow1+1] = courseNo
+						templateArr[preCol2][preRow1+1] = preCourseNO2
+						templateArr[preCol2][preRow2+1] = "000000"
+
+						for v := preCol2 + 1; v < x; v++ {
+
+							templateArr[v][preRow1+1] = "111111"
+
+						}
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+	return templateArr, corequisiteList, noPreList, havePreList, prerequisitesList
+}
+
+func getTermTemplateV2(transcript string, year string, curriculumProgram string, isCOOP string) string {
+
+	templateArr := [][]string{}
+
+	corequisiteList := []string{}
+	havePreList := []string{}
+	var listOfCourse = map[string]*model.CurriculumCourseDetail2{}
+
+	i := 0
+	x := 0
+	// for คนยังไม่ได้เรียน
+
+	// loop year
+	for i < 4 {
+
+		j := 0
+		// loop term
+		for j < 2 {
+
+			log.Println("x : ", x)
+
+			term := []string{}
+			noPreList := []string{}
+
+			termString, _ := getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i+1), strconv.Itoa(j+1))
+
+			if x != 0 {
+
+				k := 0
+
+				for k < len(templateArr[x-1]) {
+					term = append(term, "000000")
+					k++
+				}
+				templateArr = append(templateArr, term)
+				prerequisitesList := []string{}
+
+				coreList := gjson.Get(termString, `curriculum.coreAndMajorGroups.#(groupName=="Core").requiredCourses`)
+				for _, core := range coreList.Array() {
+
+					courseNo := core.Get("courseNo").String()
+					prerequisites := core.Get("prerequisites").Array()
+					corequisite := core.Get("corequisite").String()
+
+					templateArr, corequisiteList, noPreList, havePreList, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, corequisite, courseNo, prerequisites)
+
+					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
+						CourseNo:      courseNo,
+						Prerequisites: prerequisitesList,
+						Corequisite:   corequisite,
+						Credits:       int(core.Get("credits").Int()),
+					}
+				}
+
+				majorList := gjson.Get(termString, `curriculum.coreAndMajorGroups.#(groupName=="Major Required").requiredCourses`).Array()
+				for _, major := range majorList {
+
+					courseNo := major.Get("courseNo").String()
+					prerequisites := major.Get("prerequisites").Array()
+					corequisite := major.Get("corequisite").String()
+
+					templateArr, corequisiteList, noPreList, havePreList, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, corequisite, courseNo, prerequisites)
+
+					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
+						CourseNo:      courseNo,
+						Prerequisites: prerequisitesList,
+						Corequisite:   corequisite,
+						Credits:       int(major.Get("credits").Int()),
+					}
+				}
+
+				numberGE := gjson.Get(termString, `curriculum.geGroups.#`).Int()
+				n := 0
+				for n < int(numberGE) {
+					geList := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.requiredCourses`).Array()
+					for _, ge := range geList {
+
+						courseNo := ge.Get("courseNo").String()
+						prerequisites := ge.Get("prerequisites").Array()
+						corequisite := ge.Get("corequisite").String()
+
+						templateArr, corequisiteList, noPreList, havePreList, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, corequisite, courseNo, prerequisites)
+
+						listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
+							CourseNo:      courseNo,
+							Prerequisites: prerequisitesList,
+							Corequisite:   corequisite,
+							Credits:       int(ge.Get("credits").Int()),
+						}
+					}
+					n++
+				}
+
+			} else {
+				coreList := gjson.Get(termString, `curriculum.coreAndMajorGroups.#(groupName=="Core").requiredCourses`)
+				for _, core := range coreList.Array() {
+
+					no := core.Get("courseNo").String()
+					term = append(term, no)
+
+					listOfCourse[no] = &model.CurriculumCourseDetail2{
+						CourseNo:      no,
+						Prerequisites: []string{},
+						Corequisite:   core.Get("corequisite").String(),
+						Credits:       int(core.Get("credits").Int()),
+					}
+
+				}
+
+				majorList := gjson.Get(termString, `curriculum.coreAndMajorGroups.#(groupName=="Major Required").requiredCourses`).Array()
+				for _, major := range majorList {
+					no := major.Get("courseNo").String()
+					term = append(term, no)
+
+					listOfCourse[no] = &model.CurriculumCourseDetail2{
+						CourseNo:      no,
+						Prerequisites: []string{},
+						Corequisite:   major.Get("corequisite").String(),
+						Credits:       int(major.Get("credits").Int()),
+					}
+				}
+
+				numberGE := gjson.Get(termString, `curriculum.geGroups.#`).Int()
+				n := 0
+				for n < int(numberGE) {
+					geList := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.requiredCourses`).Array()
+					for _, ge := range geList {
+						no := ge.Get("courseNo").String()
+						term = append(term, no)
+
+						listOfCourse[no] = &model.CurriculumCourseDetail2{
+							CourseNo:      no,
+							Prerequisites: []string{},
+							Corequisite:   ge.Get("corequisite").String(),
+							Credits:       int(ge.Get("credits").Int()),
+						}
+					}
+					n++
+				}
+
+				templateArr = append(templateArr, term)
+			}
+
+			if len(noPreList) != 0 {
+				lastRow := len(templateArr[x]) - 1
+				for l := lastRow; l >= 0; l-- {
+					if templateArr[x][l] != "000000" {
+						lastRow++
+						break
+					} else {
+						lastRow--
+					}
+				}
+
+				if lastRow < 0 {
+					lastRow = 0
+				}
+
+				for _, c := range noPreList {
+					if lastRow >= len(templateArr[x]) {
+						insertRow(&templateArr, lastRow, corequisiteList)
+						templateArr[x][lastRow] = c
+					} else {
+						templateArr[x][lastRow] = c
+					}
+					lastRow++
+				}
+
+			}
+			log.Println("templateArr : ", templateArr)
+			j++
+			x++
+
+		}
+		i++
+	}
+
+	log.Println("templateArr Final : ", templateArr)
+
+	// insert all free elective
+	elective := readMockData("freeNormalPlan")
+	if isCOOP == "true" {
+		elective = readMockData("freeCoopPlan")
+	}
+
+	geNum := gjson.Get(elective, "curriculum.geGroups.#").Int()
+	for l := 0; l < int(geNum); l++ {
+		geCourse := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.electiveCourses`).Array()
+		groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
+		for _, ge := range geCourse {
+			term := ge.Get("recommendSemester").Int()
+			year := ge.Get("recommendYear").Int()
+			x := ((int(year) - 1) * 2) + int(term) - 1
+
+			for i, c := range templateArr[x] {
+				if c == "000000" {
+					templateArr[x][i] = groupName
+				}
+			}
+
+		}
+	}
+
+	majorCourse := gjson.Get(elective, `curriculum.coreAndMajorGroups.0.electiveCourses`).Array()
+	for _, major := range majorCourse {
+		term := major.Get("recommendSemester").Int()
+		year := major.Get("recommendYear").Int()
+		x := ((int(year) - 1) * 2) + int(term) - 1
+
+		for i, c := range templateArr[x] {
+			if c == "000000" {
+				templateArr[x][i] = "Major Elective"
+			}
+		}
+	}
+
+	freeCourse := gjson.Get(elective, `curriculum.freeGroups.0.electiveCourses`).Array()
+	for _, free := range freeCourse {
+		term := free.Get("recommendSemester").Int()
+		year := free.Get("recommendYear").Int()
+		x := ((int(year) - 1) * 2) + int(term) - 1
+
+		for i, c := range templateArr[x] {
+			if c == "000000" {
+				templateArr[x][i] = "Major Elective"
+			}
+		}
+	}
+
+	// check with student enroll
+	// curriculum := getCirriculum(year, curriculumProgram, isCOOP)
+	// yearListNum := gjson.Get(transcript, "transcript.#").Int()
+	// numOfTerm := []int{}
+	x = 0
+	// detail := []model.Details{}
+	// if yearListNum != 0 {
+
+	// 	yearList := gjson.Get(transcript, "transcript").Array()
+
+	// 	for _, yearDetail := range yearList {
+
+	// 		t := 0
+	// 		// resYearDetail := []model.StudyYearDetails{}
+	// 		termList := yearDetail.Get("yearDetails").Array()
+
+	// 		for t, termDetail := range termList {
+
+	// 			pass := []string{}
+
+	// 			detail := termDetail.Get("details").Array()
+	// 			// resCourseDetail := []model.CourseDetailResponse{}
+
+	// 			for _, courseDetail := range detail {
+
+	// 				grade := courseDetail.Get("grade").String()
+
+	// 				if slices.Contains[[]string](PASS_GRADE, grade) {
+
+	// 					code := courseDetail.Get("code").String()
+
+	// 					// d := listOfCourse[code]
+
+	// 					// yIndex := find_Yindex(templateArr, code)
+
+	// 					// group, _ := checkGroup(curriculum, code)
+
+	// 					// resCourseDetail = append(resCourseDetail, model.CourseDetailResponse{
+	// 					// 	CourseNo:      d.CourseNo,
+	// 					// 	CourseName:    "",
+	// 					// 	GroupName:     group,
+	// 					// 	Prerequisites: d.Prerequisites,
+	// 					// 	Corequisite:   d.Corequisite,
+	// 					// 	IsPass:        true,
+	// 					// 	X:             x,
+	// 					// 	Y:             yIndex,
+	// 					// })
+
+	// 					pass = append(pass, code)
+	// 				}
+	// 			}
+
+	// 			// for _, p :=range pass {
+	// 			// 	if !slices.Contains[[]string](templateArr[x], p){
+
+	// 			// 	}
+	// 			// }
+
+	// 			// แก้แกน x
+	// 			for index, temp := range templateArr[x] {
+	// 				if !slices.Contains[[]string](pass, temp) {
+
+	// 					for last := len(templateArr); last > 0; last-- {
+
+	// 						if last >= len(templateArr) {
+	// 							term := []string{}
+	// 							for k := 0; k < len(templateArr[x]); k++ {
+	// 								term = append(term, "000000")
+	// 							}
+	// 							templateArr = append(templateArr, term)
+	// 						}
+
+	// 						templateArr[last][index] = templateArr[last-1][index]
+	// 						templateArr[x][index] = "111111"
+	// 					}
+	// 				}
+	// 			}
+	// 			t++
+	// 			// resSemDetail := model.StudyYearDetails{
+	// 			// 	StudySemester: t,
+	// 			// 	SummaryCredit: int(termDetail.Get("accumulatedCredit").Int()),
+	// 			// 	CourseList:    resCourseDetail,
+	// 			// }
+	// 			// resYearDetail = append(resYearDetail, resSemDetail)
+	// 		}
+	// 		numOfTerm = append(numOfTerm, t)
+	// 		// detail = append(detail, model.Details{
+	// 		// 	StudyYear:        y,
+	// 		// 	StudyYearDetails: resYearDetail,
+	// 		// })
+	// 	}
+	// }
+
+	// log.Println("templateArr Final : ", templateArr)
+
+	return ""
 }
 
 func main() {
@@ -409,109 +1308,6 @@ func main() {
 
 	e.GET("/categoryView", func(c echo.Context) error {
 
-		// CoreList := []model.CourseDetailResponse{}
-		// CoreCredits := 0
-		// MajorList := []model.CourseDetailResponse{}
-		// MajorCredits := 0
-		// GEList := []model.CourseDetailResponse{}
-		// GECredits := 0
-		// FreeList := []model.CourseDetailResponse{}
-		// FreeCredits := 0
-
-		// // studentID := c.QueryParam("studentID")
-		// year := c.QueryParam("year")
-		// curriculumProgram := c.QueryParam("curriculumProgram")
-		// isCOOP := c.QueryParam("isCOOP")
-
-		// cirriculum := getCirriculum(year, curriculumProgram, isCOOP)
-
-		// transcript := readMockData("mockData1")
-		// yearList := gjson.Get(transcript, "transcript.#.year")
-		// for _, y := range yearList.Array() {
-		// 	semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
-		// 	i := 1
-		// 	for i < (int(semester.Int()) + 1) {
-		// 		courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
-		// 		for _, c := range courseList.Array() {
-
-		// 			code := gjson.Get(c.String(), "code")
-		// 			course := gjson.Get(c.String(), "course")
-		// 			grade := gjson.Get(c.String(), "grade")
-		// 			credit := gjson.Get(c.String(), "credit")
-
-		// 			if slices.Contains(PASS_GRADE, grade.String()) {
-		// 				group := checkGroup(cirriculum, code.String())
-
-		// 				if group == "Free" {
-		// 					FreeCredits += int(credit.Int())
-		// 					FreeList = append(FreeList, model.CourseDetailResponse{
-		// 						CourseNo:   code.String(),
-		// 						CourseName: course.String(),
-		// 						GroupName:  group,
-		// 						IsPass:     true,
-		// 					})
-		// 				} else if group == "Core" {
-		// 					CoreCredits += int(credit.Int())
-		// 					CoreList = append(CoreList, model.CourseDetailResponse{
-		// 						CourseNo:   code.String(),
-		// 						CourseName: course.String(),
-		// 						GroupName:  group,
-		// 						IsPass:     true,
-		// 					})
-		// 				} else if group == "Major Required" || group == "Major Elective" {
-		// 					MajorCredits += int(credit.Int())
-		// 					MajorList = append(MajorList, model.CourseDetailResponse{
-		// 						CourseNo:   code.String(),
-		// 						CourseName: course.String(),
-		// 						GroupName:  group,
-		// 						IsPass:     true,
-		// 					})
-		// 				} else {
-		// 					GECredits += int(credit.Int())
-		// 					GEList = append(GEList, model.CourseDetailResponse{
-		// 						CourseNo:   code.String(),
-		// 						CourseName: course.String(),
-		// 						GroupName:  group,
-		// 						IsPass:     true,
-		// 					})
-		// 				}
-		// 			}
-		// 		}
-
-		// 		i++
-		// 	}
-		// }
-
-		// // requiredCredits := gjson.Get(cirriculum, "curriculum.requiredCredits")
-		// // credits := getRequiredCredits(cirriculum)
-		// // sumCredits := GECredits + CoreCredits + MajorCredits + FreeCredits
-
-		// response := model.CategoryResponse{
-		// 	// SummaryCredits:  sumCredits,
-		// 	// RequiredCredits: int(requiredCredits.Int()),
-		// 	// CoreCategory: model.CategoryDetail{
-		// 	// 	SummaryCredits:  CoreCredits,
-		// 	// 	RequiredCredits: credits.CoreCredits,
-		// 	// },
-		// 	// MajorCategory: model.CategoryDetail{
-		// 	// 	SummaryCredits:  MajorCredits,
-		// 	// 	RequiredCredits: credits.MajorCredits,
-		// 	// },
-		// 	// GECategory: model.CategoryDetail{
-		// 	// 	SummaryCredits:  GECredits,
-		// 	// 	RequiredCredits: credits.GeCredits,
-		// 	// },
-		// 	// FreeCategory: model.CategoryDetail{
-		// 	// 	SummaryCredits:  FreeCredits,
-		// 	// 	RequiredCredits: credits.FreeCredits,
-		// 	// },
-		// }
-
-		return c.JSON(http.StatusOK, nil)
-	})
-
-	e.GET("/v2/categoryView", func(c echo.Context) error {
-
 		year := c.QueryParam("year")
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
@@ -522,7 +1318,7 @@ func main() {
 		summaryCredits := 0
 
 		curriculumString := getCirriculum(year, curriculumProgram, isCOOP)
-		transcript := readMockData("mockData1")
+		transcript := readMockData("mockData2")
 		yearList := gjson.Get(transcript, "transcript.#.year")
 		for _, y := range yearList.Array() {
 			semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
@@ -720,6 +1516,21 @@ func main() {
 
 		return c.JSON(http.StatusOK, reponse)
 
+	})
+
+	e.GET("/termView", func(c echo.Context) error {
+
+		year := c.QueryParam("year")
+		curriculumProgram := c.QueryParam("curriculumProgram")
+		isCOOP := c.QueryParam("isCOOP")
+
+		// log.Println(getTermTemplate(year, curriculumProgram, isCOOP))
+
+		transcript := readMockData("mockData1")
+
+		getTermTemplateV2(transcript, year, curriculumProgram, isCOOP)
+
+		return c.JSON(http.StatusOK, nil)
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
