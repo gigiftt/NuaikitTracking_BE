@@ -32,12 +32,14 @@ type SelectedTopicSubjectDetail struct {
 }
 
 type CourseDetailResponse struct {
-	CourseNo   string `json:"courseNo"`
-	CourseName string `json:"courseName"`
-	GroupName  string `json:"groupName"`
-	IsPass     bool   `json:"isPass"`
-	X          int    `json:"x,omitempty"`
-	Y          int    `json:"y,omitempty"`
+	CourseNo      string   `json:"courseNo"`
+	CourseName    string   `json:"courseName"`
+	GroupName     string   `json:"groupName"`
+	Prerequisites []string `json:"prerequisites"`
+	Corequisite   string   `json:"corequisite"`
+	IsPass        bool     `json:"isPass"`
+	X             int      `json:"x,omitempty"`
+	Y             int      `json:"y,omitempty"`
 }
 
 type CategoryResponse struct {
@@ -58,6 +60,24 @@ type CategoryDetail struct {
 	RequiredCourseList  []CourseDetailResponse `json:"requiredCourseList"`
 	ElectiveCourseList  []CourseDetailResponse `json:"electiveCourseList"`
 }
+
+type TermResponse struct {
+	Year    string    `json:"year"`
+	Plan    string    `json:"plan"`
+	Details []Details `json:"details"`
+}
+
+type Details struct {
+	StudyYear        int                `json:"studyYear"`
+	StudyYearDetails []StudyYearDetails `json:"studyYearDetails"`
+}
+
+type StudyYearDetails struct {
+	StudySemester int                    `json:"studySemester"`
+	SummaryCredit int                    `json:"summaryCredit"`
+	CourseList    []CourseDetailResponse `json:"courseList"`
+}
+
 type Credits struct {
 	CoreCredits  int
 	MajorCredits int
