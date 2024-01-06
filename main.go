@@ -1045,7 +1045,7 @@ func updateTemplate(templateArr [][]string, x int, lastRow int, updateIndex int,
 	return templateArr
 }
 
-func getTermTemplateV2(transcript string, year string, curriculumProgram string, isCOOP string) [][]string {
+func getTermTemplateV2(transcript string, year string, curriculumProgram string, isCOOP string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int) {
 
 	templateArr := [][]string{}
 
@@ -1328,6 +1328,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							group, _ := checkGroup(fullCurriculum, code)
 							credit := courseDetail.Get("credit").Int()
 							courseDetail := getCourseDetail(code)
+
 							// add to list of study course
 							listOfCourse[code] = &model.CurriculumCourseDetail2{
 								CourseNo:          courseDetail.CourseDetail[0].CourseNo,
@@ -1338,8 +1339,14 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 								Credits:           int(credit),
 								GroupName:         group,
 							}
+
 							// edit credit
-							numberFree[group] = numberFree[group] - int(credit)
+							if numberFree[group] <= 0 {
+								numberFree[group] = numberFree[group] - int(credit)
+							} else {
+								numberFree["Free"] = numberFree["Free"] - int(credit)
+							}
+
 							freePass = append(freePass, code)
 							pass = append(pass, group)
 
@@ -1591,7 +1598,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	log.Println("Final templateArr : ", templateArr)
 
-	return templateArr
+	return templateArr, listOfCourse, numOfTerm
 }
 
 func main() {
@@ -1852,20 +1859,20 @@ func main() {
 
 		transcript := readMockData(mockData)
 
-		templateArr := getTermTemplateV2(transcript, year, curriculumProgram, isCOOP)
+		templateArr, listOfCourse, numOfTerm := getTermTemplateV2(transcript, year, curriculumProgram, isCOOP)
 
-		term := len(templateArr)
-		num := len(templateArr[0])
+		// term := len(templateArr)
+		// num := len(templateArr[0])
 
-		for i := 0; i < num; i++ {
-			line := ""
-			for j := 0; j < term; j++ {
-				line = line + templateArr[j][i] + " "
-			}
-			log.Println(line)
-		}
+		// for i := 0; i < num; i++ {
+		// 	line := ""
+		// 	for j := 0; j < term; j++ {
+		// 		line = line + templateArr[j][i] + " "
+		// 	}
+		// 	log.Println(line)
+		// }
 
-		return c.JSON(http.StatusOK, templateArr)
+		return c.JSON(http.StatusOK, echo.Map{"study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
