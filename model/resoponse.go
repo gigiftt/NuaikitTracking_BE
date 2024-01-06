@@ -33,7 +33,7 @@ type SelectedTopicSubjectDetail struct {
 
 type CourseDetailResponse struct {
 	CourseNo      string   `json:"courseNo"`
-	CourseName    string   `json:"courseName"`
+	Credits       int      `json:"credits"`
 	GroupName     string   `json:"groupName"`
 	Prerequisites []string `json:"prerequisites"`
 	Corequisite   string   `json:"corequisite"`
@@ -51,6 +51,15 @@ type CategoryResponse struct {
 	FreeCategory    []CategoryDetail `json:"freeCategory"`
 }
 
+type CategoryResponseV2 struct {
+	SummaryCredits  int                `json:"summaryCredit"`
+	RequiredCredits int                `json:"requiredCredits"`
+	CoreCategory    []CategoryDetailV2 `json:"coreCategory"`
+	MajorCategory   []CategoryDetailV2 `json:"majorCategory"`
+	GECategory      []CategoryDetailV2 `json:"geCategory"`
+	FreeCategory    []CategoryDetailV2 `json:"freeCategory"`
+}
+
 type CategoryDetail struct {
 	GroupName           string                 `json:"groupName"`
 	RequiredCreditsNeed int                    `json:"requiredCreditsNeed"`
@@ -59,6 +68,16 @@ type CategoryDetail struct {
 	ElectiveCreditsGet  int                    `json:"electiveCreditsGet"`
 	RequiredCourseList  []CourseDetailResponse `json:"requiredCourseList"`
 	ElectiveCourseList  []CourseDetailResponse `json:"electiveCourseList"`
+}
+
+type CategoryDetailV2 struct {
+	GroupName           string                 `json:"groupName"`
+	RequiredCreditsNeed int                    `json:"requiredCreditsNeed"`
+	RequiredCreditsGet  int                    `json:"requiredCreditsGet"`
+	ElectiveCreditsNeed int                    `json:"electiveCreditsNeed"`
+	ElectiveCreditsGet  int                    `json:"electiveCreditsGet"`
+	RequiredCourseList  []CourseDetailResponse `json:"requiredCourseList,omitempty"`
+	ElectiveCourseList  []CourseDetailResponse `json:"electiveCourseList,omitempty"`
 }
 
 type TermResponse struct {
