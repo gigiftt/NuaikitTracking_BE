@@ -19,5 +19,5 @@ And that's all you need to know to get started with this project. Enjoy!
 - mockData1 : normal plan
 - mockData2 : study only 2 year
 - mockData3 : study only 2 year with F grade
-- mockData4 : study only 2 year but not 207106 
-- mockData5 : year 1 have summer
+- mockData4 : study only 2 year except 207106 course
+- mockData5 : study only 2 year and year 1 have summer term
