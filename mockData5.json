@@ -68,19 +68,19 @@
           },
           {
             "semester": 2,
-            "accumulatedCredit": 19,
+            "accumulatedCredit": 21,
             "details": [
               {
                 "code": "001102",
                 "course": "Fundamental English 2",
                 "credit": 3,
-                "grade": "B"
+                "grade": "F"
               },
               {
                 "code": "206162",
                 "course": "Calculus for Engineering 2",
                 "credit": 3,
-                "grade": "B"
+                "grade": "F"
               },
               {
                 "code": "207106",
@@ -113,6 +113,24 @@
                 "grade": "B"
               }
             ]
+          },
+          {
+            "semester": 3,
+            "accumulatedCredit": 21,
+            "details": [
+              {
+                "code": "001102",
+                "course": "Fundamental English 2",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "206162",
+                "course": "Calculus for Engineering 2",
+                "credit": 3,
+                "grade": "B"
+              }
+            ]
           }
         ]
       },
@@ -138,7 +156,7 @@
               {
                 "code": "261207",
                 "course": "Basic Computer Engineering Laboratory",
-                "credit": 2,
+                "credit": 3,
                 "grade": "B"
               },
               {
@@ -216,178 +234,6 @@
               {
                 "code": "261332",
                 "course": "Data and Computer Communucations",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "year": 2565,
-        "yearDetails": [
-          {
-            "semester": 1,
-            "accumulatedCredit": 17,
-            "details": [
-              {
-                "code": "261304",
-                "course": "Computer Architecture",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261335",
-                "course": "Computer Networks",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261336",
-                "course": "Computer Networks Laboratory",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261342",
-                "course": " Fundamentals of Database Systems",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261343",
-                "course": "Database System Laboratory",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261406",
-                "course": "Basic Compiler Design",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "050106",
-                "course": "Humanistic Arts",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          },
-          {
-            "semester": 2,
-            "accumulatedCredit": 18,
-            "details": [
-              {
-                "code": "261305",
-                "course": "Operating Systems",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261306",
-                "course": "Computer Engineering Probability and Statistics",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261361",
-                "course": "Software Engineering",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "269432",
-                "course": "Peer-to-peer Systems",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "702101",
-                "course": "Finance for Daily Life",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261111",
-                "course": "Internet and Online Community",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "year": 2566,
-        "yearDetails": [
-          {
-            "semester": 1,
-            "accumulatedCredit": 13,
-            "details": [
-              {
-                "code": "261491",
-                "course": "Project Survey",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261446",
-                "course": "Information Systems",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261448",
-                "course": "Data Mining for Computer Engineering",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261453",
-                "course": "Digital Image Processing",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "023912",
-                "course": "Free",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          },
-          {
-            "semester": 2,
-            "accumulatedCredit": 13,
-            "details": [
-              {
-                "code": "259192",
-                "course": "Skills for Professionalism and Entrepreneurship",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261405",
-                "course": "Advanced Computer Engineering Technology",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261492",
-                "course": "Project",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261458",
-                "course": "Machine Vision",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "097537",
-                "course": "Free",
                 "credit": 3,
                 "grade": "B"
               }

@@ -14,3 +14,10 @@ go run .
 3. The application will now be accessible at http://localhost:8080
 
 And that's all you need to know to get started with this project. Enjoy!
+
+## Mock Data
+- mockData1 : normal plan
+- mockData2 : study only 2 year
+- mockData3 : study only 2 year with F grade
+- mockData4 : study only 2 year but not 207106 
+- mockData5 : year 1 have summer
