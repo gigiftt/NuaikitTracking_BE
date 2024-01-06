@@ -17,6 +17,7 @@ import (
 )
 
 var PASS_GRADE = []string{"A", "B", "C", "D", "S"}
+var COOPcourse = "261495"
 
 // use godot package to load/read the .env file and
 // return the value of the key
@@ -249,31 +250,218 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 	return "Free", "electiveCourses"
 }
 
-func getRequiredCredits(cirriculum string) model.Credits {
+func getSummaryCredits(c model.CurriculumModel, curriculumString string, mockData string, isCOOP string) (model.CategoryResponseV2, error) {
 
-	freeRequiredCredits := gjson.Get(cirriculum, "curriculum.freeElectiveCredits")
-	coreRequiredCredits := gjson.Get(cirriculum, `curriculum.coreAndMajorGroups.#(groupName=="Core").requiredCredits`)
-	majorRequiredCredits := gjson.Get(cirriculum, `curriculum.coreAndMajorGroups.#(groupName=="Major Required").requiredCredits`)
-	majorElectiveCredits := gjson.Get(cirriculum, `curriculum.coreAndMajorGroups.#(groupName=="Major Elective").requiredCredits`)
+	t := model.CategoryResponseV2{}
+	curriculumRequiredCredits := c.Curriculum.RequiredCredits
+	freeRequiredCredits := c.Curriculum.FreeElectiveCredits
+	freeCategory := []model.CategoryDetailV2{}
+	freeCategory = append(freeCategory, model.CategoryDetailV2{
+		GroupName:           "Free Elective",
+		RequiredCreditsNeed: 0,
+		RequiredCreditsGet:  0,
+		ElectiveCreditsNeed: freeRequiredCredits,
+		ElectiveCreditsGet:  0,
+	})
+	coreCategory := []model.CategoryDetailV2{}
+	majorCategory := []model.CategoryDetailV2{}
+	geCategory := []model.CategoryDetailV2{}
+	coopCourse := model.CourseDetailResponse{}
 
-	geCredits := 0
-	groupList := gjson.Get(cirriculum, "curriculum.geGroups.#.groupName")
-	for _, groupName := range groupList.Array() {
+	//core and major template
+	for _, g := range c.Curriculum.CoreAndMajorGroups {
 
-		queryReqCourse := `curriculum.geGroups.#(groupName=="` + groupName.String() + `").requiredCredits`
-		credits := gjson.Get(cirriculum, queryReqCourse)
-		geCredits += int(credits.Int())
+		groupName := g.GroupName
+		reqCredit := 0
+
+		for _, c := range g.RequiredCourses {
+			reqCredit += c.Credits
+		}
+
+		if isCOOP == "true" && groupName == "Major Required" {
+			c := gjson.Get(curriculumString, `curriculum.coreAndMajorGroups.#(groupName="Major Elective").electiveCourses.#(courseNo="`+COOPcourse+`")`)
+
+			reqCredit += int(c.Get("credits").Int())
+			coopCourse = model.CourseDetailResponse{
+				CourseNo:  c.Get("courseNo").String(),
+				Credits:   int(c.Get("credits").Int()),
+				GroupName: "Major Required",
+				IsPass:    false,
+			}
+
+		}
+
+		if groupName == "Core" {
+			coreCategory = append(coreCategory, model.CategoryDetailV2{
+				GroupName:           groupName,
+				RequiredCreditsNeed: reqCredit,
+				RequiredCreditsGet:  0,
+				ElectiveCreditsNeed: g.RequiredCredits - reqCredit,
+				ElectiveCreditsGet:  0,
+			})
+		} else if groupName == "Major Elective" {
+
+			if isCOOP == "true" {
+				g.RequiredCredits -= coopCourse.Credits
+			}
+			majorCategory = append(majorCategory, model.CategoryDetailV2{
+				GroupName:           groupName,
+				RequiredCreditsNeed: reqCredit,
+				RequiredCreditsGet:  0,
+				ElectiveCreditsNeed: g.RequiredCredits,
+				ElectiveCreditsGet:  0,
+			})
+		} else {
+
+			majorCategory = append(majorCategory, model.CategoryDetailV2{
+				GroupName:           groupName,
+				RequiredCreditsNeed: reqCredit,
+				RequiredCreditsGet:  0,
+				ElectiveCreditsNeed: 0,
+				ElectiveCreditsGet:  0,
+			})
+		}
 	}
 
-	return model.Credits{
-		CoreCredits:  int(coreRequiredCredits.Int()),
-		MajorCredits: int(majorRequiredCredits.Int() + majorElectiveCredits.Int()),
-		GeCredits:    geCredits,
-		FreeCredits:  int(freeRequiredCredits.Int()),
+	//ge template
+	for _, g := range c.Curriculum.GeGroups {
+
+		groupName := g.GroupName
+		reqCredit := 0
+
+		for _, c := range g.RequiredCourses {
+
+			reqCredit += c.Credits
+		}
+
+		geCategory = append(geCategory, model.CategoryDetailV2{
+			GroupName:           groupName,
+			RequiredCreditsNeed: reqCredit,
+			RequiredCreditsGet:  0,
+			ElectiveCreditsNeed: g.RequiredCredits - reqCredit,
+			ElectiveCreditsGet:  0,
+		})
+
 	}
+
+	t = model.CategoryResponseV2{
+		SummaryCredits:  0,
+		RequiredCredits: curriculumRequiredCredits,
+		CoreCategory:    coreCategory,
+		MajorCategory:   majorCategory,
+		GECategory:      geCategory,
+		FreeCategory:    freeCategory,
+	}
+
+	tt, err := json.Marshal(t)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	template := string(tt)
+
+	summaryCredits := 0
+
+	transcript := readMockData(mockData)
+	yearList := gjson.Get(transcript, "transcript.#.year")
+	for _, y := range yearList.Array() {
+		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
+		i := 1
+		for i < (int(semester.Int()) + 1) {
+			courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
+			for _, c := range courseList.Array() {
+
+				code := gjson.Get(c.String(), "code")
+				grade := gjson.Get(c.String(), "grade")
+				credit := gjson.Get(c.String(), "credit").Int()
+
+				if slices.Contains(PASS_GRADE, grade.String()) {
+
+					group, courseType := checkGroup(curriculumString, code.String())
+
+					if group == "Free" {
+						oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+						newCredit := oldCredit + credit
+						template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+
+					} else if group == "Core" {
+						if courseType == "requiredCourses" {
+
+							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCreditsGet`, newCredit)
+
+						} else {
+
+							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").electiveCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCreditsGet`, newCredit)
+
+						}
+
+					} else if group == "Major Required" || group == "Major Elective" {
+
+						if courseType == "requiredCourses" {
+
+							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+						} else {
+
+							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+						}
+
+					} else {
+
+						if courseType == "requiredCourses" {
+
+							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+						} else {
+
+							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
+							requiredCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsNeed`).Int()
+
+							if oldCredit >= requiredCredit {
+
+								oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+
+							} else {
+
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+
+							}
+
+						}
+					}
+					summaryCredits += int(credit)
+				}
+
+			}
+
+			i++
+		}
+	}
+
+	err = json.Unmarshal([]byte(template), &t)
+	if err != nil {
+		return t, err
+	}
+
+	t.SummaryCredits = summaryCredits
+
+	return t, nil
 }
 
-func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockData string) (string, int, error) {
+func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockData string, isCOOP string) (string, int, error) {
 
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
 	freeRequiredCredits := c.Curriculum.FreeElectiveCredits
@@ -291,6 +479,8 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 	majorCategory := []model.CategoryDetail{}
 	geCategory := []model.CategoryDetail{}
 
+	coopCourse := model.CourseDetailResponse{}
+
 	//core and major template
 	for _, g := range c.Curriculum.CoreAndMajorGroups {
 
@@ -300,8 +490,6 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 		elecCourseList := []model.CourseDetailResponse{}
 
 		for _, c := range g.RequiredCourses {
-
-			// detail := getCourseDetail(c.CourseNo)
 			reqCourseList = append(reqCourseList, model.CourseDetailResponse{
 				CourseNo:  c.CourseNo,
 				Credits:   c.Credits,
@@ -309,6 +497,20 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 				IsPass:    false,
 			})
 			reqCredit += c.Credits
+		}
+
+		if isCOOP == "true" && groupName == "Major Required" {
+			c := gjson.Get(curriculumString, `curriculum.coreAndMajorGroups.#(groupName="Major Elective").electiveCourses.#(courseNo="`+COOPcourse+`")`)
+
+			reqCredit += int(c.Get("credits").Int())
+			coopCourse = model.CourseDetailResponse{
+				CourseNo:  c.Get("courseNo").String(),
+				Credits:   int(c.Get("credits").Int()),
+				GroupName: "Major Required",
+				IsPass:    false,
+			}
+
+			reqCourseList = append(reqCourseList, coopCourse)
 		}
 
 		if groupName == "Core" {
@@ -322,6 +524,10 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 				ElectiveCourseList:  elecCourseList,
 			})
 		} else if groupName == "Major Elective" {
+			if isCOOP == "true" {
+				g.RequiredCredits -= coopCourse.Credits
+			}
+
 			majorCategory = append(majorCategory, model.CategoryDetail{
 				GroupName:           groupName,
 				RequiredCreditsNeed: reqCredit,
@@ -332,6 +538,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 				ElectiveCourseList:  elecCourseList,
 			})
 		} else {
+
 			majorCategory = append(majorCategory, model.CategoryDetail{
 				GroupName:           groupName,
 				RequiredCreditsNeed: reqCredit,
@@ -341,6 +548,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 				RequiredCourseList:  reqCourseList,
 				ElectiveCourseList:  elecCourseList,
 			})
+
 		}
 	}
 
@@ -608,9 +816,9 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 						}
 
 					}
+					summaryCredits += int(credit)
 				}
 
-				summaryCredits += int(credit)
 			}
 
 			i++
@@ -1581,7 +1789,7 @@ func main() {
 		cirriculumJSON := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString := getCirriculum(year, curriculumProgram, isCOOP)
 
-		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, mockData)
+		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, mockData, isCOOP)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
@@ -1624,6 +1832,25 @@ func main() {
 		// }
 
 		return c.JSON(http.StatusOK, echo.Map{"study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
+	})
+
+	e.GET("/summaryCredits", func(c echo.Context) error {
+
+		year := c.QueryParam("year")
+		curriculumProgram := c.QueryParam("curriculumProgram")
+		isCOOP := c.QueryParam("isCOOP")
+
+		mockData := c.QueryParam("mockData")
+
+		cirriculumJSON := getCirriculumJSON(year, curriculumProgram, isCOOP)
+		curriculumString := getCirriculum(year, curriculumProgram, isCOOP)
+
+		summaryCredits, err := getSummaryCredits(cirriculumJSON, curriculumString, mockData, isCOOP)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, summaryCredits)
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
