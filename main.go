@@ -1015,10 +1015,7 @@ func updateTemplate(templateArr [][]string, x int, lastRow int, updateIndex int,
 				}
 				if index != updateIndex {
 					log.Println("not equal")
-					// for q := index; q < updateIndex; q++ {
-					// 	log.Println("q : ", q)
-					// 	templateArr = updateTemplate(templateArr, col, lastRow, updateIndex, haveRequisite)
-					// }
+
 					if reqRow == -1 || reqRow > index {
 						reqRow = index
 						reqCol = col
@@ -1063,6 +1060,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	x := 0
 	// for คนยังไม่ได้เรียน
 
+	// term template according to plan
 	// loop year
 	for i < 4 {
 
@@ -1261,12 +1259,8 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		i++
 	}
 
-	log.Println("haveRequisite : ", haveRequisite)
-
-	// insert all free elective
-	// Major Elective = "999999"
-	// GE = "888888"
-	// Free = "777777"
+	// check program that user choose
+	// get elective course for this program
 	elective := readMockData("freeNormalPlan")
 	if isCOOP == "true" {
 		elective = readMockData("freeCoopPlan")
@@ -1274,23 +1268,17 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	requiredRow := len(templateArr[0])
 
+	// get requirded credit of elective course
 	geNum := gjson.Get(elective, "curriculum.geGroups.#").Int()
 	var numberFree = map[string]int{}
-
 	for l := 0; l < int(geNum); l++ {
 		groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
 		numberFree[groupName] = int(gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.requiredCredits`).Int())
 	}
-
 	numberFree["Major Elective"] = int(gjson.Get(elective, `curriculum.coreAndMajorGroups.0.requiredCredits`).Int())
 	numberFree["Free"] = int(gjson.Get(elective, `curriculum.freeGroups.0.requiredCredits`).Int())
 
-	log.Println("")
-	log.Println("insert free eletive : ", templateArr)
-	log.Println("")
-
 	// check with student enroll
-	// curriculum := getCirriculum(year, curriculumProgram, isCOOP)
 	yearListNum := gjson.Get(transcript, "transcript.#").Int()
 	numOfTerm := []int{}
 	x = 0
@@ -1299,10 +1287,21 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		yearList := gjson.Get(transcript, "transcript").Array()
 
 		// loop in year
-		for _, yearDetail := range yearList {
+		for y, yearDetail := range yearList {
 
 			t := 0
+			summerList := []string{}
 			termList := yearDetail.Get("yearDetails").Array()
+			if len(termList) == 3 {
+				summerTerm := gjson.Get(transcript, `transcript.`+strconv.Itoa(y)+`.yearDetails.2.details`).Array()
+
+				for _, courseDetail := range summerTerm {
+
+					if slices.Contains[[]string](PASS_GRADE, courseDetail.Get("grade").String()) {
+						summerList = append(summerList, courseDetail.Get("code").String())
+					}
+				}
+			}
 
 			// loop in semester
 			for _, termDetail := range termList {
@@ -1320,13 +1319,16 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					//check if success
 					if slices.Contains[[]string](PASS_GRADE, grade) {
 
+						// check if it elective course
 						code := courseDetail.Get("code").String()
 						_, isReq := listOfCourse[code]
 						if !isReq {
 
+							// check elective group
 							group, _ := checkGroup(fullCurriculum, code)
 							credit := courseDetail.Get("credit").Int()
 							courseDetail := getCourseDetail(code)
+							// add to list of study course
 							listOfCourse[code] = &model.CurriculumCourseDetail2{
 								CourseNo:          courseDetail.CourseDetail[0].CourseNo,
 								RecommendSemester: 0,
@@ -1336,8 +1338,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 								Credits:           int(credit),
 								GroupName:         group,
 							}
-
-							log.Println("numberFree[group] : ", numberFree[group])
+							// edit credit
 							numberFree[group] = numberFree[group] - int(credit)
 							freePass = append(freePass, code)
 							pass = append(pass, group)
@@ -1349,59 +1350,74 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					}
 				}
 
-				log.Println("pass : ", pass)
+				log.Println("study in term ", x+1, " : ", pass, x+1)
 
-				first := true
-				for index, temp := range templateArr[x] {
+				// map study course into template
+				// check if summer term
+				if t == 2 {
+					// summer term add 1 row
+					lenX := len(templateArr[x])
+					term3 := []string{}
+					for k := 0; k < lenX; k++ {
 
-					contain := slices.Contains[[]string](pass, temp)
-					if !contain && temp != "000000" && temp != "111111" {
+						term3 = append(term3, "000000")
+					}
+					templateArr = slices.Insert[[][]string](templateArr, x, term3)
 
-						last := len(templateArr)
-						lenX := len(templateArr[x])
+					for _, c := range pass {
+						term, index := checkTermAndIndex(templateArr, c)
+						templateArr[x][index] = c
+						templateArr[term][index] = "000000"
+					}
 
-						// check ว่าช่องสุดท้ายที่จะเลื่อนไปว่างไหม ถ้าว่างก็ไม่ต้องเพิ่มแถว
-						// && (templateArr[last-1][lenX-1] != "000000" || templateArr[last-2][lenX-1] != "000000")
-						if !first {
-							last = last - 2
-						}
+				} else {
 
-						if first {
+					first := true
+					for index, temp := range templateArr[x] {
 
-							term := []string{}
-							term2 := []string{}
-							for k := 0; k < lenX; k++ {
-								term = append(term, "000000")
-								term2 = append(term2, "000000")
+						contain := slices.Contains[[]string](pass, temp)
+						if !contain && temp != "000000" && temp != "111111" {
+
+							last := len(templateArr)
+							lenX := len(templateArr[x])
+
+							// check ว่าช่องสุดท้ายที่จะเลื่อนไปว่างไหม ถ้าว่างก็ไม่ต้องเพิ่มแถว
+							// && (templateArr[last-1][lenX-1] != "000000" || templateArr[last-2][lenX-1] != "000000")
+							if !first {
+								last = last - 2
 							}
 
-							templateArr = append(templateArr, term)
-							templateArr = append(templateArr, term2)
-							first = false
+							if first {
+
+								term := []string{}
+								term2 := []string{}
+								for k := 0; k < lenX; k++ {
+									term = append(term, "000000")
+									term2 = append(term2, "000000")
+								}
+
+								templateArr = append(templateArr, term)
+								templateArr = append(templateArr, term2)
+								first = false
+							}
+
+							// loop เลื่อน course ที่ยังไม่ได้เรียน
+							// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
+							if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
+								templateArr = updateTemplate(templateArr, x, last, index, haveRequisite)
+							}
+
 						}
 
-						// loop เลื่อน course ที่ยังไม่ได้เรียน
-						// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
-						templateArr = updateTemplate(templateArr, x, last, index, haveRequisite)
+						if index == requiredRow-1 {
+							break
+						}
 
-					}
-					// else {
-					// 	if contain {
-					// 		// RemoveIndex(&pass, temp)
-					// 		// log.Println("pass : ", pass)
-					// 		index := slices.Index[[]string](pass, temp)
-					// 		pass = slices.Delete[[]string](pass, index, index+1)
-					// 		log.Println(pass)
-					// 	}
-
-					// }
-
-					if index == requiredRow-1 {
-						break
 					}
 
 				}
 
+				// map free elective that pass in template
 				for _, f := range freePass {
 					lenX := len(templateArr[x])
 					if lenX == requiredRow {
@@ -1424,9 +1440,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					}
 				}
 
-				log.Println("Free pass x : ", freePass)
-				log.Println("study sem x : ", x)
-				log.Println("study templateArr : ", templateArr)
+				log.Println("after map to template term ", x+1, " : ", templateArr)
 
 				t++
 				x++
@@ -1435,13 +1449,14 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 			// เก็บถึงเทอมที่เรียนเสร็จ
 			numOfTerm = append(numOfTerm, t)
-			log.Println(numOfTerm)
 		}
 	}
 
-	log.Println("len(templateArr) : ", len(templateArr))
+	// ตรวจว่าเลื่อนไปกี่เทอม
 	addNew := len(templateArr) - 8
 
+	// map free elective ที่เหลือเข้าไปใน template
+	// GE
 	for l := 0; l < int(geNum); l++ {
 
 		groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
@@ -1452,23 +1467,17 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		if numberFree[groupName]%3 != 0 {
 			needMore = needMore + 1
 		}
-		log.Println("numberFree[groupName] : ", numberFree[groupName])
-		log.Println("groupName : ", groupName)
-		log.Println("needMore : ", needMore)
 
 		needMore = len(geCourse) - needMore
-
-		log.Println("needMore : ", needMore)
 
 		for _, ge := range geCourse {
 
 			if needMore <= 0 {
+
+				// คำนวณเทอมใหม่ อิงจากเทอมที่ควรจะอยู่
 				term := ge.Get("recommendSemester").Int()
 				year := ge.Get("recommendYear").Int()
-				log.Println("addNew : ", addNew)
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-
-				log.Println("x : ", x)
 
 				lenX := len(templateArr[x])
 				if lenX == requiredRow {
@@ -1497,6 +1506,8 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	}
 
+	// map free elective ที่เหลือเข้าไปใน template
+	// Major
 	majorCourse := gjson.Get(elective, `curriculum.coreAndMajorGroups.0.electiveCourses`).Array()
 
 	needMore := numberFree["Major Elective"] / 3
@@ -1509,6 +1520,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	for _, major := range majorCourse {
 
 		if needMore <= 0 {
+
 			term := major.Get("recommendSemester").Int()
 			year := major.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
@@ -1537,6 +1549,8 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	}
 
+	// map free elective ที่เหลือเข้าไปใน template
+	// Free
 	freeCourse := gjson.Get(elective, `curriculum.freeGroups.0.electiveCourses`).Array()
 
 	needMore = numberFree["Free"] / 3
@@ -1575,7 +1589,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	}
 
-	log.Println("Final Final templateArr : ", templateArr)
+	log.Println("Final templateArr : ", templateArr)
 
 	return templateArr
 }
@@ -1839,6 +1853,17 @@ func main() {
 		transcript := readMockData(mockData)
 
 		templateArr := getTermTemplateV2(transcript, year, curriculumProgram, isCOOP)
+
+		term := len(templateArr)
+		num := len(templateArr[0])
+
+		for i := 0; i < num; i++ {
+			line := ""
+			for j := 0; j < term; j++ {
+				line = line + templateArr[j][i] + " "
+			}
+			log.Println(line)
+		}
 
 		return c.JSON(http.StatusOK, templateArr)
 	})
