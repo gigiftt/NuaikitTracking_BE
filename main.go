@@ -1472,11 +1472,11 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							// check elective group
 							group, _ := checkGroup(fullCurriculum, code)
 							credit := courseDetail.Get("credit").Int()
-							courseDetail := getCourseDetail(code)
+							// courseDetail := getCourseDetail(code)
 
 							// add to list of study course
 							listOfCourse[code] = &model.CurriculumCourseDetail2{
-								CourseNo:          courseDetail.CourseDetail[0].CourseNo,
+								CourseNo:          code,
 								RecommendSemester: 0,
 								RecommendYear:     0,
 								Prerequisites:     []string{},
