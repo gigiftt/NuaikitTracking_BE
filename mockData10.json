@@ -139,7 +139,7 @@
               "code": "261216",
               "course": "Discrete Mathematics for Computer Engineers",
               "credit": 3,
-              "grade": "F"
+              "grade": "B"
             },
             {
               "code": "261217",
@@ -347,7 +347,7 @@
               "code": "261218",
               "course": "Algorithms for Computer Engineers",
               "credit": 3,
-              "grade": "F"
+              "grade": "B"
             }
           ]
         }
@@ -360,6 +360,18 @@
           "semester": 1,
           "accumulatedCredit": 10,
           "details": [
+            {
+              "code": "261210",
+              "course": "Logic and Digital Circuits",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "261212",
+              "course": "Logic and Digital Circuits Laboratory",
+              "credit": 1,
+              "grade": "B"
+            },
             {
               "code": "261335",
               "course": "Computer Networks",
@@ -426,6 +438,12 @@
           "accumulatedCredit": 6,
           "details": [
             {
+              "code": "001201",
+              "course": "Critical Reading and Effective Writing",
+              "credit": 3,
+              "grade": "A"
+            },
+            {
               "code": "261304",
               "course": "Computer Architecture",
               "credit": 3,
@@ -479,41 +497,41 @@
               "grade": "B"
             },
             {
-                "code": "103262",
-                "course": "Vocal",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "076427",
-                "course": "Office Work Practice",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "127100",
-                "course": "Politic",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "201111",
-                "course": "World of Science",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "352103",
-                "course": "General Agriculture",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "356100",
-                "course": "Animal World",
-                "credit": 3,
-                "grade": "B"
-              }
+              "code": "103262",
+              "course": "Vocal",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "076427",
+              "course": "Office Work Practice",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "127100",
+              "course": "Politic",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "201111",
+              "course": "World of Science",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "352103",
+              "course": "General Agriculture",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "356100",
+              "course": "Animal World",
+              "credit": 3,
+              "grade": "B"
+            }
           ]
         },
         {
