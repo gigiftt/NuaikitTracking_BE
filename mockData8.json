@@ -127,7 +127,7 @@
               "code": "001201",
               "course": "Critical Reading and Effective Writing",
               "credit": 3,
-              "grade": "F"
+              "grade": "C"
             },
             {
               "code": "261207",
@@ -139,7 +139,7 @@
               "code": "261216",
               "course": "Discrete Mathematics for Computer Engineers",
               "credit": 3,
-              "grade": "F"
+              "grade": "B"
             },
             {
               "code": "261217",
@@ -192,13 +192,25 @@
       "yearDetails": [
         {
           "semester": 1,
-          "accumulatedCredit": 12,
+          "accumulatedCredit": 16,
           "details": [
             {
               "code": "206261",
               "course": "Calculus for Engineering 3",
               "credit": 3,
               "grade": "C"
+            },
+            {
+              "code": "261210",
+              "course": "Logic and Digital Circuits",
+              "credit": 3,
+              "grade": "B"
+            },
+            {
+              "code": "261212",
+              "course": "Logic and Digital Circuits Laboratory",
+              "credit": 1,
+              "grade": "B"
             },
             {
               "code": "261406",
@@ -347,7 +359,7 @@
               "code": "261218",
               "course": "Algorithms for Computer Engineers",
               "credit": 3,
-              "grade": "F"
+              "grade": "C"
             }
           ]
         }
