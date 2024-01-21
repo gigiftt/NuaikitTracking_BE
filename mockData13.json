@@ -1,0 +1,209 @@
+{
+    "studenteId": 630610727,
+    "studentName": "Natcha Silakorn",
+    "curriculum": 2563,
+    "transcript": [
+      {
+        "year": 2563,
+        "yearDetails": [
+          {
+            "semester": 1,
+            "accumulatedCredit": 21,
+            "details": [
+              {
+                "code": "001101",
+                "course": "Fundamental English 1",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "140104",
+                "course": "Citizenship",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "206161",
+                "course": "Calculus for Engineering 1",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "207105",
+                "course": "Physic for Engineering and Argo-Industry Students 1",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "207115",
+                "course": "Physic Laboratory for Engineering and Argo-Industry Students",
+                "credit": 1,
+                "grade": "B"
+              },
+              {
+                "code": "259104",
+                "course": "Engineering Drawing",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "259106",
+                "course": "Workshop Technology",
+                "credit": 1,
+                "grade": "B"
+              },
+              {
+                "code": "259191",
+                "course": "Principle of Being Professional",
+                "credit": 1,
+                "grade": "B"
+              },
+              {
+                "code": "261103",
+                "course": "Basic Computer Engineering",
+                "credit": 3,
+                "grade": "B"
+              }
+            ]
+          },
+          {
+            "semester": 2,
+            "accumulatedCredit": 19,
+            "details": [
+              {
+                "code": "001102",
+                "course": "Fundamental English 2",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "206162",
+                "course": "Calculus for Engineering 2",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "207106",
+                "course": "Physic for Engineering and Argo-Industry Students 2",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "207116",
+                "course": "Physic Laboratory for Engineering and Argo-Industry Students 2",
+                "credit": 1,
+                "grade": "B"
+              },
+              {
+                "code": "261102",
+                "course": "Computer Programming",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "203100",
+                "course": "Chenmistry in Everyday life",
+                "credit": 3,
+                "grade": "B"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "year": 2564,
+        "yearDetails": [
+          {
+            "semester": 1,
+            "accumulatedCredit": 21,
+            "details": [
+              {
+                "code": "001201",
+                "course": "Critical Reading and Effective Writing",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "206261",
+                "course": "Calculus for Engineering 3",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261207",
+                "course": "Basic Computer Engineering Laboratory",
+                "credit": 2,
+                "grade": "B"
+              },
+              {
+                "code": "261210",
+                "course": "Logic and Digital Circuits",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261212",
+                "course": "Logic and Digital Circuits Laboratory",
+                "credit": 1,
+                "grade": "B"
+              },
+              {
+                "code": "261216",
+                "course": "Discrete Mathematics for Computer Engineers",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261217",
+                "course": "Data Structure for Compouter Engineers",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "011100",
+                "course": "Man and Philosophy",
+                "credit": 3,
+                "grade": "B"
+              }
+            ]
+          },
+          {
+            "semester": 2,
+            "accumulatedCredit": 19,
+            "details": [
+              {
+                "code": "001225",
+                "course": "English in Science and Techology Contexts",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261200",
+                "course": "Object-Oriented Programming",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261208",
+                "course": "Numerical Computation for Engineers",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261218",
+                "course": "Algorithms for Computer Engineers",
+                "credit": 3,
+                "grade": "B"
+              },
+              {
+                "code": "261332",
+                "course": "Data and Computer Communucations",
+                "credit": 3,
+                "grade": "B"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }

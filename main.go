@@ -1692,24 +1692,34 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				}
 
 				// map elective couse that pass in template
-				for _, f := range freePass {
-					lenX := len(templateArr[x])
-					if lenX == requiredRow {
-						insertRow(&templateArr, lenX, corequisiteList)
-						templateArr[x][lenX] = f
-					} else {
-						addRow := true
-						for u := requiredRow; u < lenX; u++ {
-							if templateArr[x][u] == "000000" {
-								templateArr[x][u] = f
-								addRow = false
-								break
-							}
-						}
+				// แบบใส่ต่อเข้าไปข้างท้าย
+				// for _, f := range freePass {
+				// 	lenX := len(templateArr[x])
+				// 	if lenX == requiredRow {
+				// 		insertRow(&templateArr, lenX, corequisiteList)
+				// 		templateArr[x][lenX] = f
+				// 	} else {
+				// 		addRow := true
+				// 		for u := requiredRow; u < lenX; u++ {
+				// 			if templateArr[x][u] == "000000" {
+				// 				templateArr[x][u] = f
+				// 				addRow = false
+				// 				break
+				// 			}
+				// 		}
 
-						if addRow {
-							insertRow(&templateArr, lenX, corequisiteList)
-							templateArr[x][lenX] = f
+				// 		if addRow {
+				// 			insertRow(&templateArr, lenX, corequisiteList)
+				// 			templateArr[x][lenX] = f
+				// 		}
+				// 	}
+				// }
+
+				for _, f := range freePass {
+					for i, temp := range templateArr[x] {
+						if temp == "000000" {
+							templateArr[x][i] = f
+							break
 						}
 					}
 				}
@@ -1758,25 +1768,33 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				year := ge.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
 
-				lenX := len(templateArr[x])
-				if lenX == requiredRow {
-					insertRow(&templateArr, lenX, corequisiteList)
-					templateArr[x][lenX] = groupName
-				} else {
-					addRow := true
-					for u := requiredRow; u < lenX; u++ {
-						if templateArr[x][u] == "000000" {
-							templateArr[x][u] = groupName
-							addRow = false
-							break
-						}
-					}
+				// lenX := len(templateArr[x])
+				// if lenX == requiredRow {
+				// 	insertRow(&templateArr, lenX, corequisiteList)
+				// 	templateArr[x][lenX] = groupName
+				// } else {
+				// 	addRow := true
+				// 	for u := requiredRow; u < lenX; u++ {
+				// 		if templateArr[x][u] == "000000" {
+				// 			templateArr[x][u] = groupName
+				// 			addRow = false
+				// 			break
+				// 		}
+				// 	}
 
-					if addRow {
-						insertRow(&templateArr, lenX, corequisiteList)
-						templateArr[x][lenX] = groupName
+				// 	if addRow {
+				// 		insertRow(&templateArr, lenX, corequisiteList)
+				// 		templateArr[x][lenX] = groupName
+				// 	}
+				// }
+
+				for i, temp := range templateArr[x] {
+					if temp == "000000" {
+						templateArr[x][i] = groupName
+						break
 					}
 				}
+
 			} else {
 				have--
 			}
@@ -1811,25 +1829,32 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 			year := major.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
 
-			lenX := len(templateArr[x])
-			if lenX == requiredRow {
-				insertRow(&templateArr, lenX, corequisiteList)
-				templateArr[x][lenX] = "Major Elective"
-			} else {
-				addRow := true
-				for u := requiredRow; u < lenX; u++ {
-					if templateArr[x][u] == "000000" {
-						templateArr[x][u] = "Major Elective"
-						addRow = false
-						break
-					}
-				}
-
-				if addRow {
-					insertRow(&templateArr, lenX, corequisiteList)
-					templateArr[x][lenX] = "Major Elective"
+			for i, temp := range templateArr[x] {
+				if temp == "000000" {
+					templateArr[x][i] = "Major Elective"
+					break
 				}
 			}
+
+			// lenX := len(templateArr[x])
+			// if lenX == requiredRow {
+			// 	insertRow(&templateArr, lenX, corequisiteList)
+			// 	templateArr[x][lenX] = "Major Elective"
+			// } else {
+			// 	addRow := true
+			// 	for u := requiredRow; u < lenX; u++ {
+			// 		if templateArr[x][u] == "000000" {
+			// 			templateArr[x][u] = "Major Elective"
+			// 			addRow = false
+			// 			break
+			// 		}
+			// 	}
+
+			// 	if addRow {
+			// 		insertRow(&templateArr, lenX, corequisiteList)
+			// 		templateArr[x][lenX] = "Major Elective"
+			// 	}
+			// }
 		} else {
 			have--
 		}
@@ -1860,25 +1885,33 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 			year := free.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
 
-			lenX := len(templateArr[x])
-			if lenX == requiredRow {
-				insertRow(&templateArr, lenX, corequisiteList)
-				templateArr[x][lenX] = "Free"
-			} else {
-				addRow := true
-				for u := requiredRow; u < lenX; u++ {
-					if templateArr[x][u] == "000000" {
-						templateArr[x][u] = "Free"
-						addRow = false
-						break
-					}
-				}
+			// lenX := len(templateArr[x])
+			// if lenX == requiredRow {
+			// 	insertRow(&templateArr, lenX, corequisiteList)
+			// 	templateArr[x][lenX] = "Free"
+			// } else {
+			// 	addRow := true
+			// 	for u := requiredRow; u < lenX; u++ {
+			// 		if templateArr[x][u] == "000000" {
+			// 			templateArr[x][u] = "Free"
+			// 			addRow = false
+			// 			break
+			// 		}
+			// 	}
 
-				if addRow {
-					insertRow(&templateArr, lenX, corequisiteList)
-					templateArr[x][lenX] = "Free"
+			// 	if addRow {
+			// 		insertRow(&templateArr, lenX, corequisiteList)
+			// 		templateArr[x][lenX] = "Free"
+			// 	}
+			// }
+
+			for i, temp := range templateArr[x] {
+				if temp == "000000" {
+					templateArr[x][i] = "Free"
+					break
 				}
 			}
+
 		} else {
 			have--
 		}
