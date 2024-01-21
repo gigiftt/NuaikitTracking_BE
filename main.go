@@ -1788,11 +1788,20 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				// 	}
 				// }
 
+				success := false
 				for i, temp := range templateArr[x] {
 					if temp == "000000" {
 						templateArr[x][i] = groupName
+						success = true
 						break
 					}
+				}
+
+				// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
+				if !success {
+					lenX := len(templateArr[x])
+					insertRow(&templateArr, lenX, corequisiteList)
+					templateArr[x][lenX] = "Free"
 				}
 
 			} else {
@@ -1829,11 +1838,20 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 			year := major.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
 
+			success := false
 			for i, temp := range templateArr[x] {
 				if temp == "000000" {
 					templateArr[x][i] = "Major Elective"
+					success = true
 					break
 				}
+			}
+
+			// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
+			if !success {
+				lenX := len(templateArr[x])
+				insertRow(&templateArr, lenX, corequisiteList)
+				templateArr[x][lenX] = "Major Elective"
 			}
 
 			// lenX := len(templateArr[x])
@@ -1880,6 +1898,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	}
 
 	for _, free := range freeCourse {
+
 		if have == 0 {
 			term := free.Get("recommendSemester").Int()
 			year := free.Get("recommendYear").Int()
@@ -1904,12 +1923,22 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 			// 		templateArr[x][lenX] = "Free"
 			// 	}
 			// }
+			// if x > len(templateArr)
 
+			success := false
 			for i, temp := range templateArr[x] {
 				if temp == "000000" {
 					templateArr[x][i] = "Free"
+					success = true
 					break
 				}
+			}
+
+			// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
+			if !success {
+				lenX := len(templateArr[x])
+				insertRow(&templateArr, lenX, corequisiteList)
+				templateArr[x][lenX] = "Free"
 			}
 
 		} else {
