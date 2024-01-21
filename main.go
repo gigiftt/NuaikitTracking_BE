@@ -849,8 +849,7 @@ func insertRow(template *[][]string, index int, corepList []string) {
 
 }
 
-func RemoveIndex(s *[]string, value string) {
-	index := slices.Index[[]string](*s, value)
+func removeIndex(s *[]string, index int) {
 	*s = append((*s)[:index], (*s)[index+1:]...)
 }
 
@@ -1067,7 +1066,9 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 					if preRow2 < preRow1 {
 						templateArr[preCol2][preRow2] = "000000"
 					} else {
+
 						templateArr[preCol2][preRow2+2] = "000000"
+						preRow2 = preRow2 + 2
 					}
 
 				} else {
@@ -1115,10 +1116,14 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 						templateArr[preCol2][preRow2] = "000000"
 					} else {
 						templateArr[preCol2][preRow2+1] = "000000"
+						preRow2 = preRow2 + 1
 					}
 
 				}
 
+				for i := 0; i <= x; i++ {
+					removeIndex(&templateArr[i], preRow2)
+				}
 			}
 
 		}
@@ -1142,49 +1147,123 @@ func checkTermAndIndex(templateArr [][]string, course string) (int, int) {
 
 }
 
-func updateTemplate(templateArr [][]string, x int, lastRow int, updateIndex int, haveRequisite map[string][]string) [][]string {
+func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex int, haveRequisite map[string][]string, listOfCourse map[string]*model.CurriculumCourseDetail2, exceptCoreq bool) [][]string {
 
-	l := lastRow - 1
-	reqRow := -1
-	reqCol := -1
+	// x = term ปจจ (นับตาม arr)/ เทอมที่จะเลื่อน
+	// updateIndex = index ของตัวที่ต้องเลื่อน
+	// numberTerm = จำนวนเทอมทั้งหมด
+
+	// เลื่อนแถวนั้นจากท้าย
+	l := numberTerm - 1
+	// reqRow := -1
+	// reqCol := -1
+	// เริ่มลูปจากตัวสุดท้ายของแถวนั้น
+
+	log.Println("x : ", x)
+
+	log.Println("update : ")
 	for l >= x {
 
-		reqList, b := haveRequisite[templateArr[l][updateIndex]]
+		//เช็คว่าตัวนี้เลื่อนมีตัวต่อไหม
+		_, bb := haveRequisite[templateArr[l][updateIndex]]
 
-		if b {
-			for _, req := range reqList {
-				col, index := checkTermAndIndex(templateArr, req)
-
-				if index == -1 || col == -1 {
-					break
-				}
-				if index != updateIndex {
-					log.Println("not equal")
-
-					if reqRow == -1 || reqRow > index {
-						reqRow = index
-						reqCol = col
-					}
-				} else {
-					log.Println("equal : ")
-				}
-			}
-		}
-
+		// ถ้ามีตัวต่อด้วยให้มีเส้นเชื่อม
 		templateArr[l+2][updateIndex] = templateArr[l][updateIndex]
 
-		templateArr[l][updateIndex] = "000000"
+		detail, b := listOfCourse[templateArr[l+2][updateIndex]]
+		if bb && len(detail.Prerequisites) != 0 {
+			templateArr[l][updateIndex] = "111111"
+			if l == x {
+				templateArr[l+1][updateIndex] = "111111"
+			}
+		} else {
+			templateArr[l][updateIndex] = "000000"
+		}
+
+		// ถ้ามีตัว coreq ให้เลื่อนตัว coreq ด้วย
+		// detail, b := listOfCourse[templateArr[l+2][updateIndex]]
+		if b && !exceptCoreq {
+			if detail.Corequisite != "" {
+				templateArr[l+2][updateIndex+1] = templateArr[l][updateIndex+1]
+				templateArr[l][updateIndex+1] = "000000"
+			}
+		}
 
 		l = l - 1
 
 	}
 
-	if reqCol != -1 && reqRow != -1 {
-		for q := reqRow; q < updateIndex; q++ {
+	// ไล่เช็คจากตัวแรกว่ามีตัวไหนมีตัวต่อไหม
+	// เลื่อนตัวต่อของมันด้วย
+	l = numberTerm - 1
+	start := x
 
-			templateArr = updateTemplate(templateArr, reqCol, lastRow, q, haveRequisite)
+	// เริ่มลูปจากตัวสุดท้ายของแถวนั้น
+	updateRow := updateIndex
+
+	for start <= l {
+		log.Println("start : ", start)
+
+		log.Println("templateArr[start][updateIndex] : ", templateArr[start][updateIndex])
+		reqList, b := haveRequisite[templateArr[start][updateIndex]]
+		if b {
+			log.Println("len(reqList) : ", len(reqList))
+
+			// เช็คว่าตัวต่ออยู่ในแถวเดียวกันไหม
+			// ถ้าไม่อยู่ก็เลื่อนตรงก้อนนั้นทั้งหมด
+			if len(reqList) > 0 {
+				for _, req := range reqList {
+					col, index := checkTermAndIndex(templateArr, req)
+
+					if index != updateIndex {
+						if index < updateRow {
+							for i := index; i < updateIndex; i++ {
+								templateArr = updateTemplate(templateArr, col, numberTerm, i, haveRequisite, listOfCourse, true)
+							}
+							updateRow = index
+						}
+
+						pre := listOfCourse[req]
+
+						// อัปเดตเส้นเชื่อม
+						templateArr[col][index] = "111111"
+						templateArr[col+1][index] = "111111"
+
+						if len(pre.Prerequisites) < 2 {
+							for h := col - 1; h >= 0; h-- {
+								if templateArr[h][index] == "111111" {
+									templateArr[h][index] = "000000"
+								} else {
+									break
+								}
+							}
+						}
+
+					}
+
+				}
+
+			}
 
 		}
+
+		preReq, b := listOfCourse[templateArr[start][updateIndex]]
+		// ถ้ามี prerequisites 2 ตัว
+		// update เส้นเชื่อสำหรับตัวที่ผ่านแล้ว แต่อีกตัวไม่ผ่าน
+		if b {
+			log.Println("Prerequisites : ", preReq.Prerequisites)
+		}
+		if b && len(preReq.Prerequisites) == 2 {
+			for _, preReq := range preReq.Prerequisites {
+				col, index := checkTermAndIndex(templateArr, preReq)
+
+				for col = col + 1; col < start; col++ {
+					templateArr[col][index] = "111111"
+				}
+			}
+		}
+
+		start++
 	}
 
 	return templateArr
@@ -1323,6 +1402,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 						Prerequisites: []string{},
 						Corequisite:   core.Get("corequisite").String(),
 						Credits:       int(core.Get("credits").Int()),
+						GroupName:     "Core",
 					}
 
 				}
@@ -1337,6 +1417,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 						Prerequisites: []string{},
 						Corequisite:   major.Get("corequisite").String(),
 						Credits:       int(major.Get("credits").Int()),
+						GroupName:     "Major Required",
 					}
 				}
 
@@ -1344,6 +1425,8 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				n := 0
 				for n < int(numberGE) {
 					geList := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.requiredCourses`).Array()
+					groupname := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.groupName`).String()
+
 					for _, ge := range geList {
 						no := ge.Get("courseNo").String()
 						term = append(term, no)
@@ -1353,6 +1436,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							Prerequisites: []string{},
 							Corequisite:   ge.Get("corequisite").String(),
 							Credits:       int(ge.Get("credits").Int()),
+							GroupName:     groupname,
 						}
 					}
 					n++
@@ -1386,19 +1470,24 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				// 	lastRow++
 				// }
 
+				log.Println(noPreList)
 				for _, c := range noPreList {
-					for n := 0; n < len(templateArr[x])+1; n++ {
-						if n >= len(templateArr[x]) {
-							insertRow(&templateArr, n, corequisiteList)
-							templateArr[x][n] = c
-							break
-						}
 
-						if templateArr[x][n] == "000000" {
-							templateArr[x][n] = c
-							break
-						}
-					}
+					n := len(templateArr[x])
+					insertRow(&templateArr, n, corequisiteList)
+					templateArr[x][n] = c
+					// for n := 0; n < len(templateArr[x])+1; n++ {
+					// 	if n >= len(templateArr[x]) {
+					// 		insertRow(&templateArr, n, corequisiteList)
+					// 		templateArr[x][n] = c
+					// 		break
+					// 	}
+
+					// 	if templateArr[x][n] == "000000" {
+					// 		templateArr[x][n] = c
+					// 		break
+					// 	}
+					// }
 				}
 			}
 			log.Println("templateArr : ", templateArr)
@@ -1491,11 +1580,11 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							}
 
 							// edit credit
-							if numberFree[group] <= 0 {
-								numberFree[group] = numberFree[group] - int(credit)
-							} else {
-								numberFree["Free"] = numberFree["Free"] - int(credit)
-							}
+							// if numberFree[group] <= 0 {
+							numberFree[group] = numberFree[group] - int(credit)
+							// } else {
+							// 	numberFree["Free"] = numberFree["Free"] - int(credit)
+							// }
 
 							freePass = append(freePass, code)
 							pass = append(pass, group)
@@ -1507,7 +1596,8 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					}
 				}
 
-				log.Println("study in term ", x+1, " : ", pass, x+1)
+				log.Println("study in term ", x, " : ", pass)
+				log.Println("template in term ", x, " : ", templateArr[x])
 
 				// map study course into template
 				// check if summer term
@@ -1515,16 +1605,28 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					// summer term add 1 row
 					lenX := len(templateArr[x])
 					term3 := []string{}
+					// ใส่ summer term โดยตรวจว่ามีเส้นเชื่อมไหม
 					for k := 0; k < lenX; k++ {
 
-						term3 = append(term3, "000000")
+						if templateArr[x-1][k] != "000000" && templateArr[x][k] != "000000" {
+							term3 = append(term3, "111111")
+						} else {
+							term3 = append(term3, "000000")
+						}
+
 					}
 					templateArr = slices.Insert[[][]string](templateArr, x, term3)
 
+					log.Println("after inert summer : ", templateArr)
+
+					// ใส่ตัวที่มีใน template ก่อน
 					for _, c := range pass {
 						term, index := checkTermAndIndex(templateArr, c)
-						templateArr[x][index] = c
-						templateArr[term][index] = "000000"
+						if term != -1 && index != -1 {
+							templateArr[x][index] = c
+							templateArr[term][index] = "111111"
+
+						}
 					}
 
 				} else {
@@ -1534,6 +1636,9 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 						contain := slices.Contains[[]string](pass, temp)
 						if !contain && temp != "000000" && temp != "111111" {
+
+							log.Println("first : ", first)
+							log.Println("temp : ", temp)
 
 							last := len(templateArr)
 							lenX := len(templateArr[x])
@@ -1560,8 +1665,20 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 							// loop เลื่อน course ที่ยังไม่ได้เรียน
 							// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
-							if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
-								templateArr = updateTemplate(templateArr, x, last, index, haveRequisite)
+							// if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
+
+							// สำหรับการณีที่ไม่มี summer
+							// if len(termList) != 3 {
+							// log.Println("update : ")
+							// templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse)
+							//  } else
+							if len(termList) == 3 && t == 1 && slices.Contains[[]string](summerList, temp) {
+								// สำหรับการณีที่มี summer และเป็น term 2 และเรียนใน summer
+								// do notting
+							} else {
+								// สำหรับการณีที่มี summer และเป็น term 1
+								log.Println("update : ")
+								templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
 							}
 
 						}
@@ -1574,7 +1691,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 				}
 
-				// map free elective that pass in template
+				// map elective couse that pass in template
 				for _, f := range freePass {
 					lenX := len(templateArr[x])
 					if lenX == requiredRow {
@@ -1611,6 +1728,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 	// ตรวจว่าเลื่อนไปกี่เทอม
 	addNew := len(templateArr) - 8
+	log.Println("addNew : ", addNew)
 
 	// map free elective ที่เหลือเข้าไปใน template
 	// GE
@@ -1621,18 +1739,19 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 
 		log.Println("numberFree[groupName] : ", numberFree[groupName])
 		// check need more credit
-		needMore := numberFree[groupName] / 3
-		if numberFree[groupName]%3 != 0 {
-			needMore = needMore + 1
+		have := -1
+		if numberFree[groupName] > 0 {
+			needMore := numberFree[groupName] / 3
+			if numberFree[groupName]%3 != 0 {
+				needMore = needMore + 1
+			}
+
+			have = len(geCourse) - needMore
 		}
-
-		// needMore = len(geCourse) - needMore
-
-		log.Println("need more : ", needMore)
 
 		for _, ge := range geCourse {
 
-			if needMore == 0 {
+			if have == 0 {
 
 				// คำนวณเทอมใหม่ อิงจากเทอมที่ควรจะอยู่
 				term := ge.Get("recommendSemester").Int()
@@ -1659,7 +1778,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					}
 				}
 			} else {
-				needMore--
+				have--
 			}
 
 		}
@@ -1670,16 +1789,23 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	// Major
 	majorCourse := gjson.Get(elective, `curriculum.coreAndMajorGroups.0.electiveCourses`).Array()
 
-	needMore := numberFree["Major Elective"] / 3
-	if numberFree["Major Elective"]%3 != 0 {
-		needMore = needMore + 1
-	}
+	log.Println("numberFree[Major Elective] : ", numberFree["Major Elective"])
 
-	// needMore = len(majorCourse) - needMore
+	have := -1
+	if numberFree["Major Elective"] > 0 {
+		needMore := numberFree["Major Elective"] / 3
+		if numberFree["Major Elective"]%3 != 0 {
+			needMore = needMore + 1
+		}
+
+		have = len(majorCourse) - needMore
+		log.Println("need more : ", needMore)
+
+	}
 
 	for _, major := range majorCourse {
 
-		if needMore == 0 {
+		if have == 0 {
 
 			term := major.Get("recommendSemester").Int()
 			year := major.Get("recommendYear").Int()
@@ -1705,7 +1831,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				}
 			}
 		} else {
-			needMore--
+			have--
 		}
 
 	}
@@ -1714,15 +1840,22 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	// Free
 	freeCourse := gjson.Get(elective, `curriculum.freeGroups.0.electiveCourses`).Array()
 
-	needMore = numberFree["Free"] / 3
-	if numberFree["Free"]%3 != 0 {
-		needMore = needMore + 1
+	log.Println("numberFree[Free] : ", numberFree["Free"])
+
+	have = -1
+	if numberFree["Free"] > 0 {
+		needMore := numberFree["Free"] / 3
+		if numberFree["Free"]%3 != 0 {
+			needMore = needMore + 1
+		}
+
+		log.Println("need more : ", needMore)
+
+		have = len(freeCourse) - needMore
 	}
 
-	// needMore = len(freeCourse) - needMore
-
 	for _, free := range freeCourse {
-		if needMore == 0 {
+		if have == 0 {
 			term := free.Get("recommendSemester").Int()
 			year := free.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
@@ -1747,7 +1880,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				}
 			}
 		} else {
-			needMore--
+			have--
 		}
 
 	}
