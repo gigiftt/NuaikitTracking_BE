@@ -1245,6 +1245,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 						Prerequisites: prerequisitesList,
 						Corequisite:   corequisite,
 						Credits:       int(core.Get("credits").Int()),
+						GroupName:     "Core",
 					}
 				}
 
@@ -1262,6 +1263,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 						Prerequisites: prerequisitesList,
 						Corequisite:   corequisite,
 						Credits:       int(major.Get("credits").Int()),
+						GroupName:     "Major Required",
 					}
 				}
 
@@ -1280,6 +1282,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							Prerequisites: prerequisitesList,
 							Corequisite:   corequisite,
 							Credits:       int(major.Get("credits").Int()),
+							GroupName:     "Major Required",
 						}
 					}
 				}
@@ -1287,6 +1290,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 				numberGE := gjson.Get(termString, `curriculum.geGroups.#`).Int()
 				n := 0
 				for n < int(numberGE) {
+					groupname := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.groupName`).String()
 					geList := gjson.Get(termString, `curriculum.geGroups.`+strconv.Itoa(n)+`.requiredCourses`).Array()
 					for _, ge := range geList {
 
@@ -1301,6 +1305,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 							Prerequisites: prerequisitesList,
 							Corequisite:   corequisite,
 							Credits:       int(ge.Get("credits").Int()),
+							GroupName:     groupname,
 						}
 					}
 					n++
@@ -1614,17 +1619,20 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
 		geCourse := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.electiveCourses`).Array()
 
+		log.Println("numberFree[groupName] : ", numberFree[groupName])
 		// check need more credit
 		needMore := numberFree[groupName] / 3
 		if numberFree[groupName]%3 != 0 {
 			needMore = needMore + 1
 		}
 
-		needMore = len(geCourse) - needMore
+		// needMore = len(geCourse) - needMore
+
+		log.Println("need more : ", needMore)
 
 		for _, ge := range geCourse {
 
-			if needMore <= 0 {
+			if needMore == 0 {
 
 				// คำนวณเทอมใหม่ อิงจากเทอมที่ควรจะอยู่
 				term := ge.Get("recommendSemester").Int()
@@ -1650,9 +1658,9 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 						templateArr[x][lenX] = groupName
 					}
 				}
+			} else {
+				needMore--
 			}
-
-			needMore--
 
 		}
 
@@ -1667,11 +1675,11 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		needMore = needMore + 1
 	}
 
-	needMore = len(majorCourse) - needMore
+	// needMore = len(majorCourse) - needMore
 
 	for _, major := range majorCourse {
 
-		if needMore <= 0 {
+		if needMore == 0 {
 
 			term := major.Get("recommendSemester").Int()
 			year := major.Get("recommendYear").Int()
@@ -1696,8 +1704,9 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					templateArr[x][lenX] = "Major Elective"
 				}
 			}
+		} else {
+			needMore--
 		}
-		needMore--
 
 	}
 
@@ -1710,9 +1719,10 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 		needMore = needMore + 1
 	}
 
-	needMore = len(freeCourse) - needMore
+	// needMore = len(freeCourse) - needMore
+
 	for _, free := range freeCourse {
-		if needMore <= 0 {
+		if needMore == 0 {
 			term := free.Get("recommendSemester").Int()
 			year := free.Get("recommendYear").Int()
 			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
@@ -1736,8 +1746,9 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 					templateArr[x][lenX] = "Free"
 				}
 			}
+		} else {
+			needMore--
 		}
-		needMore--
 
 	}
 
