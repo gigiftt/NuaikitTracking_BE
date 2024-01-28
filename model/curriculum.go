@@ -16,7 +16,7 @@ type CurriculumCourseDetail2 struct {
 	Prerequisites     []string `json:"prerequisites"`
 	Corequisite       string   `json:"corequisite"`
 	Credits           int      `json:"credits"`
-	GroupName         string
+	GroupName         string   `json:"groupName"`
 }
 
 type CurriculumGroupDetails struct {

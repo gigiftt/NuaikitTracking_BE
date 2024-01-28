@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"NuaikitTracking_BE.com/model"
 	"github.com/joho/godotenv"
@@ -17,7 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var PASS_GRADE = []string{"A", "B", "C", "D", "S"}
+var PASS_GRADE = []string{"A", "B", "C", "D", "B+", "C+", "D+", "S"}
 var COOPcourse = "261495"
 
 // use godot package to load/read the .env file and
@@ -51,7 +52,7 @@ func readMockData(mockFile string) string {
 	return string(c)
 }
 
-func getCirriculum(year string, curriculumProgram string, isCOOP string) string {
+func getCirriculum(year string, curriculumProgram string, isCOOP string) (string, error) {
 	client := &http.Client{}
 
 	cpeAPI := goDotEnvVariable("CPE_API_URL")
@@ -63,6 +64,7 @@ func getCirriculum(year string, curriculumProgram string, isCOOP string) string 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return "", err
 	}
 
 	req.Header.Add("Authorization", bearer)
@@ -75,17 +77,20 @@ func getCirriculum(year string, curriculumProgram string, isCOOP string) string 
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+
+		return "", err
 	}
 
 	c, error := ioutil.ReadAll(resp.Body)
 	if error != nil {
 		log.Fatalln("Error is : ", err)
+		return "", err
 	}
 
-	return string(c)
+	return string(c), nil
 }
 
-func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) model.CurriculumModel {
+func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) (model.CurriculumModel, error) {
 	client := &http.Client{}
 
 	cpeAPI := goDotEnvVariable("CPE_API_URL")
@@ -97,6 +102,7 @@ func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) mod
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.CurriculumModel{}, err
 	}
 
 	req.Header.Add("Authorization", bearer)
@@ -109,24 +115,27 @@ func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) mod
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.CurriculumModel{}, err
 	}
 
 	c, error := ioutil.ReadAll(resp.Body)
 	if error != nil {
 		log.Fatalln("Error is : ", err)
+		return model.CurriculumModel{}, err
 	}
 
 	curriculum := model.CurriculumModel{}
 	err = json.Unmarshal(c, &curriculum)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.CurriculumModel{}, err
 	}
 
-	return curriculum
+	return curriculum, nil
 
 }
 
-func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYear string, studySemester string) (string, model.CurriculumModel) {
+func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYear string, studySemester string) (string, model.CurriculumModel, error) {
 
 	client := &http.Client{}
 
@@ -139,6 +148,7 @@ func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYe
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
 	}
 
 	req.Header.Add("Authorization", bearer)
@@ -153,24 +163,27 @@ func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYe
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
 	}
 
-	c, error := ioutil.ReadAll(resp.Body)
-	if error != nil {
+	c, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
 	}
 
 	term := model.CurriculumModel{}
 	err = json.Unmarshal(c, &term)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
 	}
 
-	return string(c), term
+	return string(c), term, nil
 
 }
 
-func getCourseDetail(courseNo string) model.GetCourseDetail {
+func getCourseDetail(courseNo string) (model.GetCourseDetail, error) {
 	client := &http.Client{}
 
 	cpeAPI := goDotEnvVariable("CPE_API_URL")
@@ -182,6 +195,7 @@ func getCourseDetail(courseNo string) model.GetCourseDetail {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
 	}
 
 	req.Header.Add("Authorization", bearer)
@@ -192,11 +206,13 @@ func getCourseDetail(courseNo string) model.GetCourseDetail {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
 	}
 
-	c, error := ioutil.ReadAll(resp.Body)
-	if error != nil {
+	c, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
 	}
 
 	detail := model.GetCourseDetail{}
@@ -204,10 +220,220 @@ func getCourseDetail(courseNo string) model.GetCourseDetail {
 	err = json.Unmarshal(c, &detail)
 	if err != nil {
 		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
 	}
 
-	return detail
+	return detail, nil
 
+}
+
+func getRawTranscript(studentId string) (model.CourseGrade, error) {
+	client := &http.Client{}
+
+	cpeAPI := goDotEnvVariable("CPE_API_URL")
+	cpeToken := goDotEnvVariable("CPE_API_TOKEN")
+
+	url := cpeAPI + "/private/student/" + studentId + "/courseGrade"
+	bearer := "Bearer " + cpeToken
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	req.Header.Add("Authorization", bearer)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.CourseGrade{}, err
+	}
+
+	c, error := ioutil.ReadAll(resp.Body)
+	if error != nil {
+		log.Fatalln("Error is : ", err)
+		return model.CourseGrade{}, error
+	}
+
+	courseGrade := model.CourseGrade{}
+
+	err = json.Unmarshal(c, &courseGrade)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.CourseGrade{}, err
+	}
+
+	return courseGrade, nil
+}
+
+func getTranscript(studentId string) model.StudentTranscript {
+
+	rawTranscript, _ := getRawTranscript(studentId)
+
+	std := strings.Split(studentId, "")
+	yearString := "25" + std[0] + std[1]
+
+	courseGrade := map[int]map[int][]model.TranscriptCourse{}
+
+	for _, c := range rawTranscript.CourseGrades {
+		semesterList, b := courseGrade[c.Year]
+		if b {
+			courseList, b := semesterList[c.Semester]
+			if b {
+				courseList = append(courseList, model.TranscriptCourse{
+					Code:  c.CourseNo,
+					Grade: c.Grade,
+				})
+
+				courseGrade[c.Year][c.Semester] = courseList
+
+			} else {
+				courses := []model.TranscriptCourse{}
+				courses = append(courses, model.TranscriptCourse{
+					Code:  c.CourseNo,
+					Grade: c.Grade,
+				})
+
+				semesterList[c.Semester] = courses
+				courseGrade[c.Year] = semesterList
+
+			}
+
+		} else {
+			courses := []model.TranscriptCourse{}
+			courses = append(courses, model.TranscriptCourse{
+				Code:  c.CourseNo,
+				Grade: c.Grade,
+			})
+			semesterList = map[int][]model.TranscriptCourse{}
+			semesterList[c.Semester] = courses
+			courseGrade[c.Year] = semesterList
+		}
+	}
+
+	transcriptYear := []model.TranscriptYear{}
+	for year, detail := range courseGrade {
+
+		transcriptSemester := []model.TranscriptSemester{}
+
+		for semester, detail := range detail {
+			semesterDetail := model.TranscriptSemester{
+				Semester: semester,
+				Details:  detail,
+			}
+			transcriptSemester = append(transcriptSemester, semesterDetail)
+		}
+
+		yearDetail := model.TranscriptYear{
+			Year:        year,
+			YearDetails: transcriptSemester,
+		}
+
+		transcriptYear = append(transcriptYear, yearDetail)
+
+	}
+
+	transcriptFinal := model.StudentTranscript{
+		StudentId:  studentId,
+		Curriculum: yearString,
+		Transcript: transcriptYear,
+	}
+
+	log.Println(transcriptFinal)
+
+	return transcriptFinal
+}
+
+func getTranscriptWithCredit(studentId string) model.StudentTranscript {
+
+	rawTranscript, _ := getRawTranscript(studentId)
+
+	std := strings.Split(studentId, "")
+	yearString := "25" + std[0] + std[1]
+
+	courseGrade := map[int]map[int][]model.TranscriptCourse{}
+
+	for _, c := range rawTranscript.CourseGrades {
+
+		detail, err := getCourseDetail(c.CourseNo)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		credit := 3
+		if len(detail.CourseDetail) != 0 {
+			credit = detail.CourseDetail[0].Credits.Credits
+		}
+
+		semesterList, b := courseGrade[c.Year]
+		if b {
+			courseList, b := semesterList[c.Semester]
+			if b {
+				courseList = append(courseList, model.TranscriptCourse{
+					Code:   c.CourseNo,
+					Credit: credit,
+					Grade:  c.Grade,
+				})
+
+				courseGrade[c.Year][c.Semester] = courseList
+
+			} else {
+				courses := []model.TranscriptCourse{}
+				courses = append(courses, model.TranscriptCourse{
+					Code:   c.CourseNo,
+					Credit: credit,
+					Grade:  c.Grade,
+				})
+
+				semesterList[c.Semester] = courses
+				courseGrade[c.Year] = semesterList
+
+			}
+
+		} else {
+			courses := []model.TranscriptCourse{}
+			courses = append(courses, model.TranscriptCourse{
+				Code:   c.CourseNo,
+				Credit: credit,
+				Grade:  c.Grade,
+			})
+			semesterList = map[int][]model.TranscriptCourse{}
+			semesterList[c.Semester] = courses
+			courseGrade[c.Year] = semesterList
+		}
+	}
+
+	transcriptYear := []model.TranscriptYear{}
+	for year, detail := range courseGrade {
+
+		transcriptSemester := []model.TranscriptSemester{}
+
+		for semester, detail := range detail {
+			semesterDetail := model.TranscriptSemester{
+				Semester: semester,
+				Details:  detail,
+			}
+			transcriptSemester = append(transcriptSemester, semesterDetail)
+		}
+
+		yearDetail := model.TranscriptYear{
+			Year:        year,
+			YearDetails: transcriptSemester,
+		}
+
+		transcriptYear = append(transcriptYear, yearDetail)
+
+	}
+
+	transcriptFinal := model.StudentTranscript{
+		StudentId:  studentId,
+		Curriculum: yearString,
+		Transcript: transcriptYear,
+	}
+
+	log.Println(transcriptFinal)
+
+	return transcriptFinal
 }
 
 func checkGroup(cirriculum string, courseNo string) (string, string) {
@@ -251,7 +477,7 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 	return "Free", "electiveCourses"
 }
 
-func getSummaryCredits(c model.CurriculumModel, curriculumString string, mockData string, isCOOP string) (model.CategoryResponseV2, error) {
+func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, transcriptModel model.StudentTranscript) (model.CategoryResponseV2, error) {
 
 	t := model.CategoryResponseV2{}
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
@@ -363,7 +589,16 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, mockDat
 
 	summaryCredits := 0
 
-	transcript := readMockData(mockData)
+	tm, err := json.Marshal(transcriptModel)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	transcript := string(tm)
+
+	// log.Println(transcript)
+
+	// transcript = readMockData("mockData1")
 	yearList := gjson.Get(transcript, "transcript.#.year")
 	for _, y := range yearList.Array() {
 		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
@@ -408,6 +643,10 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, mockDat
 							newCredit := oldCredit + credit
 							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
 
+						} else if code.String() == COOPcourse {
+							oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
 						} else {
 
 							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
@@ -1278,7 +1517,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	var listOfCourse = map[string]*model.CurriculumCourseDetail2{}
 	var haveRequisite = map[string][]string{}
 
-	fullCurriculum := getCirriculum(year, curriculumProgram, isCOOP)
+	fullCurriculum, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
 	i := 0
 	x := 0
@@ -1297,7 +1536,7 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 			term := []string{}
 			noPreList := []string{}
 
-			termString, _ := getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i+1), strconv.Itoa(j+1))
+			termString, _, _ := getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i+1), strconv.Itoa(j+1))
 
 			if x != 0 {
 
@@ -1973,7 +2212,7 @@ func main() {
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
 
-		cirriculum := getCirriculum(year, curriculumProgram, isCOOP)
+		cirriculum, _ := getCirriculum(year, curriculumProgram, isCOOP)
 		query := `curriculum.coreAndMajorGroups.#(groupName=="Major Elective").electiveCourses`
 		value := gjson.Get(cirriculum, query)
 
@@ -1988,7 +2227,7 @@ func main() {
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
 
-		cirriculum := getCirriculum(year, curriculumProgram, isCOOP)
+		cirriculum, _ := getCirriculum(year, curriculumProgram, isCOOP)
 		query := `curriculum.geGroups.#(groupName=="` + groupName + `").electiveCourses`
 		value := gjson.Get(cirriculum, query)
 
@@ -2002,8 +2241,8 @@ func main() {
 		isCOOP := c.QueryParam("isCOOP")
 		mockData := c.QueryParam("mockData")
 
-		cirriculumJSON := getCirriculumJSON(year, curriculumProgram, isCOOP)
-		curriculumString := getCirriculum(year, curriculumProgram, isCOOP)
+		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
+		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
 		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, mockData, isCOOP)
 		if err != nil {
@@ -2052,21 +2291,46 @@ func main() {
 
 	e.GET("/summaryCredits", func(c echo.Context) error {
 
+		studentId := c.QueryParam("studentId")
+		transcript := getTranscriptWithCredit(studentId)
+
 		year := c.QueryParam("year")
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
 
-		mockData := c.QueryParam("mockData")
+		// mockData := c.QueryParam("mockData")
 
-		cirriculumJSON := getCirriculumJSON(year, curriculumProgram, isCOOP)
-		curriculumString := getCirriculum(year, curriculumProgram, isCOOP)
+		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
+		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
-		summaryCredits, err := getSummaryCredits(cirriculumJSON, curriculumString, mockData, isCOOP)
+		summaryCredits, err := getSummaryCredits(cirriculumJSON, curriculumString, isCOOP, transcript)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
 
 		return c.JSON(http.StatusOK, summaryCredits)
+	})
+
+	e.GET("/checkGroup", func(c echo.Context) error {
+
+		courseNo := c.QueryParam("courseNo")
+
+		year := c.QueryParam("year")
+		curriculumProgram := c.QueryParam("curriculumProgram")
+		isCOOP := c.QueryParam("isCOOP")
+
+		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
+		group, courseType := checkGroup(curriculumString, courseNo)
+
+		return c.JSON(http.StatusOK, echo.Map{"group": group, "courseType": courseType})
+	})
+
+	e.GET("/test", func(c echo.Context) error {
+		studentId := c.QueryParam("studentId")
+
+		t := getTranscriptWithCredit(studentId)
+
+		return c.JSON(http.StatusOK, t)
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
