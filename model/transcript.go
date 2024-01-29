@@ -15,8 +15,8 @@ type Course struct {
 }
 
 type StudentTranscript struct {
+	Status     bool             `json:"status"`
 	StudentId  string           `json:"studenteId"`
-	Curriculum string           `json:"curriculum"`
 	Transcript []TranscriptYear `json:"transcript"`
 }
 

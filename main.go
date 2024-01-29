@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"NuaikitTracking_BE.com/model"
 	"github.com/joho/godotenv"
@@ -269,9 +268,13 @@ func getRawTranscript(studentId string) (model.CourseGrade, error) {
 func getTranscript(studentId string) model.StudentTranscript {
 
 	rawTranscript, _ := getRawTranscript(studentId)
-
-	std := strings.Split(studentId, "")
-	yearString := "25" + std[0] + std[1]
+	if !rawTranscript.Ok {
+		return model.StudentTranscript{
+			Status:     false,
+			StudentId:  studentId,
+			Transcript: []model.TranscriptYear{},
+		}
+	}
 
 	courseGrade := map[int]map[int][]model.TranscriptCourse{}
 
@@ -334,8 +337,8 @@ func getTranscript(studentId string) model.StudentTranscript {
 	}
 
 	transcriptFinal := model.StudentTranscript{
+		Status:     true,
 		StudentId:  studentId,
-		Curriculum: yearString,
 		Transcript: transcriptYear,
 	}
 
@@ -347,9 +350,13 @@ func getTranscript(studentId string) model.StudentTranscript {
 func getTranscriptWithCredit(studentId string) model.StudentTranscript {
 
 	rawTranscript, _ := getRawTranscript(studentId)
-
-	std := strings.Split(studentId, "")
-	yearString := "25" + std[0] + std[1]
+	if !rawTranscript.Ok {
+		return model.StudentTranscript{
+			Status:     false,
+			StudentId:  studentId,
+			Transcript: []model.TranscriptYear{},
+		}
+	}
 
 	courseGrade := map[int]map[int][]model.TranscriptCourse{}
 
@@ -426,12 +433,10 @@ func getTranscriptWithCredit(studentId string) model.StudentTranscript {
 	}
 
 	transcriptFinal := model.StudentTranscript{
+		Status:     true,
 		StudentId:  studentId,
-		Curriculum: yearString,
 		Transcript: transcriptYear,
 	}
-
-	log.Println(transcriptFinal)
 
 	return transcriptFinal
 }
@@ -477,7 +482,7 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 	return "Free", "electiveCourses"
 }
 
-func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, transcriptModel model.StudentTranscript) (model.CategoryResponseV2, error) {
+func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (model.CategoryResponseV2, error) {
 
 	t := model.CategoryResponseV2{}
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
@@ -589,16 +594,23 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 
 	summaryCredits := 0
 
-	tm, err := json.Marshal(transcriptModel)
-	if err != nil {
-		log.Fatalln("Error is : ", err)
+	transcript := ""
+	if studentId == "" {
+		transcript = readMockData(mockData)
+	} else {
+		transcriptModel := getTranscriptWithCredit(studentId)
+		if !transcriptModel.Status {
+			return t, nil
+		}
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
 	}
 
-	transcript := string(tm)
-
-	// log.Println(transcript)
-
-	// transcript = readMockData("mockData1")
 	yearList := gjson.Get(transcript, "transcript.#.year")
 	for _, y := range yearList.Array() {
 		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
@@ -701,7 +713,7 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 	return t, nil
 }
 
-func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockData string, isCOOP string) (string, int, error) {
+func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (string, int, error) {
 
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
 	freeRequiredCredits := c.Curriculum.FreeElectiveCredits
@@ -842,7 +854,22 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 
 	summaryCredits := 0
 
-	transcript := readMockData(mockData)
+	transcript := ""
+	if studentId == "" {
+		transcript = readMockData(mockData)
+	} else {
+		transcriptModel := getTranscriptWithCredit(studentId)
+		if !transcriptModel.Status {
+			return template, summaryCredits, nil
+		}
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+	}
+
 	yearList := gjson.Get(transcript, "transcript.#.year")
 	for _, y := range yearList.Array() {
 		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
@@ -943,6 +970,13 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, mockD
 
 							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
 
+						} else if code.String() == COOPcourse {
+
+							oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
+							newCredit := oldCredit + credit
+							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
+
+							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
 						} else {
 
 							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
@@ -1508,7 +1542,7 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	return templateArr
 }
 
-func getTermTemplateV2(transcript string, year string, curriculumProgram string, isCOOP string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int) {
+func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int) {
 
 	templateArr := [][]string{}
 
@@ -1756,6 +1790,19 @@ func getTermTemplateV2(transcript string, year string, curriculumProgram string,
 	numberFree["Major Elective"] = int(gjson.Get(elective, `curriculum.coreAndMajorGroups.0.requiredCredits`).Int())
 	numberFree["Free"] = int(gjson.Get(elective, `curriculum.freeGroups.0.requiredCredits`).Int())
 
+	transcript := ""
+	if studentId == "" {
+		transcript = readMockData(mockData)
+	} else {
+		transcriptModel := getTranscript(studentId)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+	}
 	// check with student enroll
 	yearListNum := gjson.Get(transcript, "transcript.#").Int()
 	numOfTerm := []int{}
@@ -2240,11 +2287,12 @@ func main() {
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
 		mockData := c.QueryParam("mockData")
+		studentId := c.QueryParam("studentId")
 
 		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
-		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, mockData, isCOOP)
+		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
@@ -2266,14 +2314,10 @@ func main() {
 		year := c.QueryParam("year")
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
-
 		mockData := c.QueryParam("mockData")
+		studentId := c.QueryParam("studentId")
 
-		// log.Println(getTermTemplate(year, curriculumProgram, isCOOP))
-
-		transcript := readMockData(mockData)
-
-		templateArr, listOfCourse, numOfTerm := getTermTemplateV2(transcript, year, curriculumProgram, isCOOP)
+		templateArr, listOfCourse, numOfTerm := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
 
 		// term := len(templateArr)
 		// num := len(templateArr[0])
@@ -2292,18 +2336,17 @@ func main() {
 	e.GET("/summaryCredits", func(c echo.Context) error {
 
 		studentId := c.QueryParam("studentId")
-		transcript := getTranscriptWithCredit(studentId)
-
 		year := c.QueryParam("year")
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
+		mockData := c.QueryParam("mockData")
 
-		// mockData := c.QueryParam("mockData")
+		log.Println(mockData)
 
 		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
-		summaryCredits, err := getSummaryCredits(cirriculumJSON, curriculumString, isCOOP, transcript)
+		summaryCredits, err := getSummaryCredits(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
