@@ -40,3 +40,10 @@ type CurriculumModel struct {
 	Ok         bool       `json:"ok"`
 	Curriculum Curriculum `json:"curriculum"`
 }
+
+type PreReqListInfo struct {
+	Col              int
+	Row              int
+	HavePreReq       bool
+	PreReqCourseList []string
+}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"NuaikitTracking_BE.com/model"
 	"github.com/joho/godotenv"
@@ -267,6 +268,10 @@ func getRawTranscript(studentId string) (model.CourseGrade, error) {
 
 func getTranscript(studentId string) model.StudentTranscript {
 
+	split := strings.SplitAfter(studentId, "")
+	idText := "25" + split[0] + split[1]
+	idNum, _ := strconv.Atoi(idText)
+
 	rawTranscript, _ := getRawTranscript(studentId)
 	if !rawTranscript.Ok {
 		return model.StudentTranscript{
@@ -315,24 +320,46 @@ func getTranscript(studentId string) model.StudentTranscript {
 	}
 
 	transcriptYear := []model.TranscriptYear{}
-	for year, detail := range courseGrade {
 
+	for i := 0; i < len(courseGrade); i++ {
 		transcriptSemester := []model.TranscriptSemester{}
 
-		for semester, detail := range detail {
-			semesterDetail := model.TranscriptSemester{
-				Semester: semester,
-				Details:  detail,
+		_, b := courseGrade[idNum]
+		if b {
+
+			for j := 1; j <= len(courseGrade[idNum]); j++ {
+				log.Println("id Num : ", idNum)
+				log.Println("j: ", j)
+				detail, b := courseGrade[idNum][j]
+				if b {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  detail,
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				} else {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  []model.TranscriptCourse{},
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				}
 			}
-			transcriptSemester = append(transcriptSemester, semesterDetail)
-		}
 
-		yearDetail := model.TranscriptYear{
-			Year:        year,
-			YearDetails: transcriptSemester,
-		}
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			idNum++
 
-		transcriptYear = append(transcriptYear, yearDetail)
+			transcriptYear = append(transcriptYear, yearDetail)
+		} else {
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			transcriptYear = append(transcriptYear, yearDetail)
+		}
 
 	}
 
@@ -348,6 +375,10 @@ func getTranscript(studentId string) model.StudentTranscript {
 }
 
 func getTranscriptWithCredit(studentId string) model.StudentTranscript {
+
+	split := strings.SplitAfter(studentId, "")
+	idText := "25" + split[0] + split[1]
+	idNum, _ := strconv.Atoi(idText)
 
 	rawTranscript, _ := getRawTranscript(studentId)
 	if !rawTranscript.Ok {
@@ -411,24 +442,46 @@ func getTranscriptWithCredit(studentId string) model.StudentTranscript {
 	}
 
 	transcriptYear := []model.TranscriptYear{}
-	for year, detail := range courseGrade {
 
+	for i := 0; i < len(courseGrade); i++ {
 		transcriptSemester := []model.TranscriptSemester{}
 
-		for semester, detail := range detail {
-			semesterDetail := model.TranscriptSemester{
-				Semester: semester,
-				Details:  detail,
+		_, b := courseGrade[idNum]
+		if b {
+
+			for j := 1; j <= len(courseGrade[idNum]); j++ {
+				log.Println("id Num : ", idNum)
+				log.Println("j: ", j)
+				detail, b := courseGrade[idNum][j]
+				if b {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  detail,
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				} else {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  []model.TranscriptCourse{},
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				}
 			}
-			transcriptSemester = append(transcriptSemester, semesterDetail)
-		}
 
-		yearDetail := model.TranscriptYear{
-			Year:        year,
-			YearDetails: transcriptSemester,
-		}
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			idNum++
 
-		transcriptYear = append(transcriptYear, yearDetail)
+			transcriptYear = append(transcriptYear, yearDetail)
+		} else {
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			transcriptYear = append(transcriptYear, yearDetail)
+		}
 
 	}
 
@@ -1221,7 +1274,7 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 
 			}
 
-		} else {
+		} else if len(prerequisites) == 2 {
 
 			// have 2 prerequisites
 			havePreList = append(havePreList, courseNo)
@@ -1399,6 +1452,47 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 				}
 			}
 
+		} else {
+			// เอาวิชานี้ใส่ใน havePreList
+			havePreList = append(havePreList, courseNo)
+
+			thisPreList := map[string]model.PreReqListInfo{}
+
+			// prerequisites => prereq ของ course นี้
+			for _, c := range prerequisites {
+
+				course := c.String()
+
+				havePreReq := slices.Contains[[]string](havePreList, course)
+				PreReqCourseList := []string{}
+				if havePreReq {
+					PreReqCourseList = append(PreReqCourseList)
+				}
+
+				thisPreList[course] = model.PreReqListInfo{
+					Col:              0,
+					Row:              0,
+					HavePreReq:       havePreReq,
+					PreReqCourseList: []string{},
+				}
+			}
+
+			// prerequisitesList = append(prerequisitesList, prerequisites[0].String())
+			// arr, h := haveRequisite[prerequisites[0].String()]
+			// if !h {
+			// 	haveRequisite[prerequisites[0].String()] = []string{courseNo}
+			// } else {
+			// 	arr = append(arr, courseNo)
+			// 	haveRequisite[prerequisites[0].String()] = arr
+			// }
+			// prerequisitesList = append(prerequisitesList, prerequisites[1].String())
+			// arr, h = haveRequisite[prerequisites[1].String()]
+			// if !h {
+			// 	haveRequisite[prerequisites[1].String()] = []string{courseNo}
+			// } else {
+			// 	arr = append(arr, courseNo)
+			// 	haveRequisite[prerequisites[1].String()] = arr
+			// }
 		}
 
 	}
@@ -1408,7 +1502,6 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 
 func checkTermAndIndex(templateArr [][]string, course string) (int, int) {
 
-	log.Println("course : ", course)
 	for t, term := range templateArr {
 		index := slices.Index[[]string](term, course)
 		if index != -1 {
@@ -1432,9 +1525,6 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	// reqCol := -1
 	// เริ่มลูปจากตัวสุดท้ายของแถวนั้น
 
-	log.Println("x : ", x)
-
-	log.Println("update : ")
 	for l >= x {
 
 		//เช็คว่าตัวนี้เลื่อนมีตัวต่อไหม
@@ -1475,12 +1565,9 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	updateRow := updateIndex
 
 	for start <= l {
-		log.Println("start : ", start)
 
-		log.Println("templateArr[start][updateIndex] : ", templateArr[start][updateIndex])
 		reqList, b := haveRequisite[templateArr[start][updateIndex]]
 		if b {
-			log.Println("len(reqList) : ", len(reqList))
 
 			// เช็คว่าตัวต่ออยู่ในแถวเดียวกันไหม
 			// ถ้าไม่อยู่ก็เลื่อนตรงก้อนนั้นทั้งหมด
@@ -1524,7 +1611,6 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 		// ถ้ามี prerequisites 2 ตัว
 		// update เส้นเชื่อสำหรับตัวที่ผ่านแล้ว แต่อีกตัวไม่ผ่าน
 		if b {
-			log.Println("Prerequisites : ", preReq.Prerequisites)
 		}
 		if b && len(preReq.Prerequisites) == 2 {
 			for _, preReq := range preReq.Prerequisites {
@@ -1719,48 +1805,13 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			}
 
 			if len(noPreList) != 0 {
-				// lastRow := len(templateArr[x]) - 1
-				// for l := lastRow; l >= 0; l-- {
-				// 	if templateArr[x][l] != "000000" {
-				// 		lastRow++
-				// 		break
-				// 	} else {
-				// 		lastRow--
-				// 	}
-				// }
 
-				// if lastRow < 0 {
-				// 	lastRow = 0
-				// }
-
-				// for _, c := range noPreList {
-				// 	if lastRow >= len(templateArr[x]) {
-				// 		insertRow(&templateArr, lastRow, corequisiteList)
-				// 		templateArr[x][lastRow] = c
-				// 	} else {
-				// 		templateArr[x][lastRow] = c
-				// 	}
-				// 	lastRow++
-				// }
-
-				log.Println(noPreList)
 				for _, c := range noPreList {
 
 					n := len(templateArr[x])
 					insertRow(&templateArr, n, corequisiteList)
 					templateArr[x][n] = c
-					// for n := 0; n < len(templateArr[x])+1; n++ {
-					// 	if n >= len(templateArr[x]) {
-					// 		insertRow(&templateArr, n, corequisiteList)
-					// 		templateArr[x][n] = c
-					// 		break
-					// 	}
 
-					// 	if templateArr[x][n] == "000000" {
-					// 		templateArr[x][n] = c
-					// 		break
-					// 	}
-					// }
 				}
 			}
 			log.Println("templateArr : ", templateArr)
@@ -1794,7 +1845,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	if studentId == "" {
 		transcript = readMockData(mockData)
 	} else {
-		transcriptModel := getTranscript(studentId)
+		transcriptModel := getTranscriptWithCredit(studentId)
 
 		tm, err := json.Marshal(transcriptModel)
 		if err != nil {
@@ -1882,9 +1933,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					}
 				}
 
-				log.Println("study in term ", x, " : ", pass)
-				log.Println("template in term ", x, " : ", templateArr[x])
-
 				// map study course into template
 				// check if summer term
 				if t == 2 {
@@ -1903,8 +1951,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					}
 					templateArr = slices.Insert[[][]string](templateArr, x, term3)
 
-					log.Println("after inert summer : ", templateArr)
-
 					// ใส่ตัวที่มีใน template ก่อน
 					for _, c := range pass {
 						term, index := checkTermAndIndex(templateArr, c)
@@ -1922,9 +1968,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 						contain := slices.Contains[[]string](pass, temp)
 						if !contain && temp != "000000" && temp != "111111" {
-
-							log.Println("first : ", first)
-							log.Println("temp : ", temp)
 
 							last := len(templateArr)
 							lenX := len(templateArr[x])
@@ -1963,7 +2006,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 								// do notting
 							} else {
 								// สำหรับการณีที่มี summer และเป็น term 1
-								log.Println("update : ")
+
 								templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
 							}
 
@@ -2319,17 +2362,6 @@ func main() {
 
 		templateArr, listOfCourse, numOfTerm := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
 
-		// term := len(templateArr)
-		// num := len(templateArr[0])
-
-		// for i := 0; i < num; i++ {
-		// 	line := ""
-		// 	for j := 0; j < term; j++ {
-		// 		line = line + templateArr[j][i] + " "
-		// 	}
-		// 	log.Println(line)
-		// }
-
 		return c.JSON(http.StatusOK, echo.Map{"study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
 	})
 
@@ -2340,8 +2372,6 @@ func main() {
 		curriculumProgram := c.QueryParam("curriculumProgram")
 		isCOOP := c.QueryParam("isCOOP")
 		mockData := c.QueryParam("mockData")
-
-		log.Println(mockData)
 
 		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
@@ -2369,11 +2399,11 @@ func main() {
 	})
 
 	e.GET("/test", func(c echo.Context) error {
+
 		studentId := c.QueryParam("studentId")
 
-		t := getTranscriptWithCredit(studentId)
-
-		return c.JSON(http.StatusOK, t)
+		mo := getTranscript(studentId)
+		return c.JSON(http.StatusOK, mo)
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
