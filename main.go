@@ -18,7 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var PASS_GRADE = []string{"A", "B", "C", "D", "B+", "C+", "D+", "S"}
+var PASS_GRADE = []string{"A", "B", "C", "D", "B+", "C+", "D+", "S", "CX"}
 var COOPcourse = "261495"
 
 // use godot package to load/read the .env file and
@@ -537,6 +537,30 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 
 func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (model.CategoryResponseV2, error) {
 
+	transcript := ""
+	transcriptModel := model.StudentTranscript{}
+	if studentId == "" {
+		transcript = readMockData(mockData)
+
+	} else {
+		transcriptModel = getTranscriptWithCredit(studentId)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
+	}
+
+	if strings.Contains(transcript, COOPcourse) {
+		isCOOP = "true"
+	}
+
 	t := model.CategoryResponseV2{}
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
 	freeRequiredCredits := c.Curriculum.FreeElectiveCredits
@@ -647,112 +671,97 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 
 	summaryCredits := 0
 
-	transcript := ""
-	if studentId == "" {
-		transcript = readMockData(mockData)
-	} else {
-		transcriptModel := getTranscriptWithCredit(studentId)
-		if !transcriptModel.Status {
-			return t, nil
-		}
+	if transcript != "" {
+		yearList := gjson.Get(transcript, "transcript.#.year")
+		for _, y := range yearList.Array() {
+			semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
+			i := 1
+			for i < (int(semester.Int()) + 1) {
+				courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
+				for _, c := range courseList.Array() {
 
-		tm, err := json.Marshal(transcriptModel)
-		if err != nil {
-			log.Fatalln("Error is : ", err)
-		}
+					code := gjson.Get(c.String(), "code")
+					grade := gjson.Get(c.String(), "grade")
+					credit := gjson.Get(c.String(), "credit").Int()
 
-		transcript = string(tm)
-	}
+					if slices.Contains(PASS_GRADE, grade.String()) {
 
-	yearList := gjson.Get(transcript, "transcript.#.year")
-	for _, y := range yearList.Array() {
-		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
-		i := 1
-		for i < (int(semester.Int()) + 1) {
-			courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
-			for _, c := range courseList.Array() {
+						group, courseType := checkGroup(curriculumString, code.String())
 
-				code := gjson.Get(c.String(), "code")
-				grade := gjson.Get(c.String(), "grade")
-				credit := gjson.Get(c.String(), "credit").Int()
-
-				if slices.Contains(PASS_GRADE, grade.String()) {
-
-					group, courseType := checkGroup(curriculumString, code.String())
-
-					if group == "Free" {
-						oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
-						newCredit := oldCredit + credit
-						template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
-
-					} else if group == "Core" {
-						if courseType == "requiredCourses" {
-
-							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
+						if group == "Free" {
+							oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
 							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCreditsGet`, newCredit)
+							template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
 
-						} else {
+						} else if group == "Core" {
+							if courseType == "requiredCourses" {
 
-							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").electiveCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCreditsGet`, newCredit)
-
-						}
-
-					} else if group == "Major Required" || group == "Major Elective" {
-
-						if courseType == "requiredCourses" {
-
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
-
-						} else if code.String() == COOPcourse {
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
-						} else {
-
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
-						}
-
-					} else {
-
-						if courseType == "requiredCourses" {
-
-							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
-
-						} else {
-
-							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
-							requiredCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsNeed`).Int()
-
-							if oldCredit >= requiredCredit {
-
-								oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+								oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
 								newCredit := oldCredit + credit
-								template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCreditsGet`, newCredit)
 
 							} else {
 
+								oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").electiveCreditsGet`).Int()
 								newCredit := oldCredit + credit
-								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCreditsGet`, newCredit)
 
 							}
 
+						} else if group == "Major Required" || group == "Major Elective" {
+
+							if courseType == "requiredCourses" {
+
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+							} else if code.String() == COOPcourse {
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
+							} else {
+
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+							}
+
+						} else {
+
+							if courseType == "requiredCourses" {
+
+								oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+							} else {
+
+								oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
+								requiredCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsNeed`).Int()
+
+								if oldCredit >= requiredCredit {
+
+									oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+									newCredit := oldCredit + credit
+									template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+
+								} else {
+
+									newCredit := oldCredit + credit
+									template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+
+								}
+
+							}
 						}
+						summaryCredits += int(credit)
 					}
-					summaryCredits += int(credit)
+
 				}
 
+				i++
 			}
-
-			i++
 		}
 	}
 
@@ -762,11 +771,35 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 	}
 
 	t.SummaryCredits = summaryCredits
+	t.IsCoop = isCOOP
 
 	return t, nil
 }
 
-func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (string, int, error) {
+func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (string, int, string, error) {
+
+	transcript := ""
+	if studentId == "" {
+		transcript = readMockData(mockData)
+
+	} else {
+		transcriptModel := getTranscriptWithCredit(studentId)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
+	}
+
+	if strings.Contains(transcript, COOPcourse) {
+		isCOOP = "true"
+	}
 
 	curriculumRequiredCredits := c.Curriculum.RequiredCredits
 	freeRequiredCredits := c.Curriculum.FreeElectiveCredits
@@ -907,86 +940,31 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 	summaryCredits := 0
 
-	transcript := ""
-	if studentId == "" {
-		transcript = readMockData(mockData)
-	} else {
-		transcriptModel := getTranscriptWithCredit(studentId)
-		if !transcriptModel.Status {
-			return template, summaryCredits, nil
-		}
-		tm, err := json.Marshal(transcriptModel)
-		if err != nil {
-			log.Fatalln("Error is : ", err)
-		}
+	if transcript != "" {
 
-		transcript = string(tm)
-	}
+		yearList := gjson.Get(transcript, "transcript.#.year")
+		for _, y := range yearList.Array() {
+			semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
+			i := 1
+			for i < (int(semester.Int()) + 1) {
+				courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
+				for _, c := range courseList.Array() {
 
-	yearList := gjson.Get(transcript, "transcript.#.year")
-	for _, y := range yearList.Array() {
-		semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
-		i := 1
-		for i < (int(semester.Int()) + 1) {
-			courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
-			for _, c := range courseList.Array() {
+					code := gjson.Get(c.String(), "code")
+					grade := gjson.Get(c.String(), "grade")
+					credit := gjson.Get(c.String(), "credit").Int()
 
-				code := gjson.Get(c.String(), "code")
-				grade := gjson.Get(c.String(), "grade")
-				credit := gjson.Get(c.String(), "credit").Int()
+					if slices.Contains(PASS_GRADE, grade.String()) {
 
-				if slices.Contains(PASS_GRADE, grade.String()) {
+						group, courseType := checkGroup(curriculumString, code.String())
+						courseList := []model.CourseDetailResponse{}
 
-					group, courseType := checkGroup(curriculumString, code.String())
-					courseList := []model.CourseDetailResponse{}
-
-					if group == "Free" {
-						oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
-						newCredit := oldCredit + credit
-						template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
-
-						if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
-							courseList = append(courseList, model.CourseDetailResponse{
-								CourseNo:  code.String(),
-								Credits:   int(credit),
-								GroupName: group,
-								IsPass:    true,
-							})
-						} else {
-
-							oldValue := gjson.Get(template, `freeCategory.#(groupName="Free Elective")`).String()
-							categoryDetail := model.CategoryDetail{}
-							err := json.Unmarshal([]byte(oldValue), &categoryDetail)
-							if err != nil {
-								return "", 0, err
-							}
-
-							courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-								CourseNo:  code.String(),
-								Credits:   int(credit),
-								GroupName: group,
-								IsPass:    true,
-							})
-						}
-
-						template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCourseList`, courseList)
-
-					} else if group == "Core" {
-						if courseType == "requiredCourses" {
-
-							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
+						if group == "Free" {
+							oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
 							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCreditsGet`, newCredit)
+							template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
 
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
-
-						} else {
-
-							oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").electiveCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCreditsGet`, newCredit)
-
-							if gjson.Get(template, `coreCategory.#(groupName="Core").electiveCourseList.#`).Int() == 0 {
+							if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
 								courseList = append(courseList, model.CourseDetailResponse{
 									CourseNo:  code.String(),
 									Credits:   int(credit),
@@ -995,11 +973,11 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 								})
 							} else {
 
-								oldValue := gjson.Get(template, `coreCategory.#(groupName="Core")`).String()
+								oldValue := gjson.Get(template, `freeCategory.#(groupName="Free Elective")`).String()
 								categoryDetail := model.CategoryDetail{}
 								err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 								if err != nil {
-									return "", 0, err
+									return "", 0, "", err
 								}
 
 								courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1010,81 +988,24 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 								})
 							}
 
-							template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCourseList`, courseList)
-						}
+							template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCourseList`, courseList)
 
-					} else if group == "Major Required" || group == "Major Elective" {
+						} else if group == "Core" {
+							if courseType == "requiredCourses" {
 
-						if courseType == "requiredCourses" {
+								oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCreditsGet`, newCredit)
 
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
 
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
-
-						} else if code.String() == COOPcourse {
-
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
-
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
-						} else {
-
-							oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
-
-							if gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
-								courseList = append(courseList, model.CourseDetailResponse{
-									CourseNo:  code.String(),
-									Credits:   int(credit),
-									GroupName: group,
-									IsPass:    true,
-								})
 							} else {
 
-								oldValue := gjson.Get(template, `majorCategory.#(groupName="`+group+`")`).String()
-								categoryDetail := model.CategoryDetail{}
-								err := json.Unmarshal([]byte(oldValue), &categoryDetail)
-								if err != nil {
-									return "", 0, err
-								}
-
-								courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-									CourseNo:  code.String(),
-									Credits:   int(credit),
-									GroupName: group,
-									IsPass:    true,
-								})
-							}
-
-							template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
-						}
-
-					} else {
-
-						if courseType == "requiredCourses" {
-
-							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
-							newCredit := oldCredit + credit
-							template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
-
-							template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
-
-						} else {
-
-							oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
-							requiredCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsNeed`).Int()
-
-							if oldCredit >= requiredCredit {
-
-								oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+								oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").electiveCreditsGet`).Int()
 								newCredit := oldCredit + credit
-								template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCreditsGet`, newCredit)
 
-								if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
+								if gjson.Get(template, `coreCategory.#(groupName="Core").electiveCourseList.#`).Int() == 0 {
 									courseList = append(courseList, model.CourseDetailResponse{
 										CourseNo:  code.String(),
 										Credits:   int(credit),
@@ -1093,11 +1014,11 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									})
 								} else {
 
-									oldValue := gjson.Get(template, `freeCategory.#(groupName="Free Elective")`).String()
+									oldValue := gjson.Get(template, `coreCategory.#(groupName="Core")`).String()
 									categoryDetail := model.CategoryDetail{}
 									err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 									if err != nil {
-										return "", 0, err
+										return "", 0, "", err
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1108,13 +1029,33 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									})
 								}
 
-								template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCourseList`, courseList)
+								template, _ = sjson.Set(template, `coreCategory.#(groupName="Core").electiveCourseList`, courseList)
+							}
+
+						} else if group == "Major Required" || group == "Major Elective" {
+
+							if courseType == "requiredCourses" {
+
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
+
+							} else if code.String() == COOPcourse {
+
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCreditsGet`, newCredit)
+
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="Major Required").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
 							} else {
 
+								oldCredit := gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
 								newCredit := oldCredit + credit
-								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
 
-								if gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
+								if gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
 									courseList = append(courseList, model.CourseDetailResponse{
 										CourseNo:  code.String(),
 										Credits:   int(credit),
@@ -1123,11 +1064,11 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									})
 								} else {
 
-									oldValue := gjson.Get(template, `geCategory.#(groupName="`+group+`")`).String()
+									oldValue := gjson.Get(template, `majorCategory.#(groupName="`+group+`")`).String()
 									categoryDetail := model.CategoryDetail{}
 									err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 									if err != nil {
-										return "", 0, err
+										return "", 0, "", err
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1137,22 +1078,101 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 										IsPass:    true,
 									})
 								}
+
+								template, _ = sjson.Set(template, `majorCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
 							}
 
-							template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
-						}
+						} else {
 
+							if courseType == "requiredCourses" {
+
+								oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`).Int()
+								newCredit := oldCredit + credit
+								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCreditsGet`, newCredit)
+
+								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").requiredCourseList.#(courseNo="`+code.String()+`").isPass`, true)
+
+							} else {
+
+								oldCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`).Int()
+								requiredCredit := gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCreditsNeed`).Int()
+
+								if oldCredit >= requiredCredit {
+
+									oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
+									newCredit := oldCredit + credit
+									template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
+
+									if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
+										courseList = append(courseList, model.CourseDetailResponse{
+											CourseNo:  code.String(),
+											Credits:   int(credit),
+											GroupName: group,
+											IsPass:    true,
+										})
+									} else {
+
+										oldValue := gjson.Get(template, `freeCategory.#(groupName="Free Elective")`).String()
+										categoryDetail := model.CategoryDetail{}
+										err := json.Unmarshal([]byte(oldValue), &categoryDetail)
+										if err != nil {
+											return "", 0, "", err
+										}
+
+										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
+											CourseNo:  code.String(),
+											Credits:   int(credit),
+											GroupName: group,
+											IsPass:    true,
+										})
+									}
+
+									template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCourseList`, courseList)
+								} else {
+
+									newCredit := oldCredit + credit
+									template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
+
+									if gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
+										courseList = append(courseList, model.CourseDetailResponse{
+											CourseNo:  code.String(),
+											Credits:   int(credit),
+											GroupName: group,
+											IsPass:    true,
+										})
+									} else {
+
+										oldValue := gjson.Get(template, `geCategory.#(groupName="`+group+`")`).String()
+										categoryDetail := model.CategoryDetail{}
+										err := json.Unmarshal([]byte(oldValue), &categoryDetail)
+										if err != nil {
+											return "", 0, "", err
+										}
+
+										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
+											CourseNo:  code.String(),
+											Credits:   int(credit),
+											GroupName: group,
+											IsPass:    true,
+										})
+									}
+								}
+
+								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
+							}
+
+						}
+						summaryCredits += int(credit)
 					}
-					summaryCredits += int(credit)
+
 				}
 
+				i++
 			}
-
-			i++
 		}
 	}
 
-	return template, summaryCredits, nil
+	return template, summaryCredits, isCOOP, nil
 
 }
 
@@ -1628,7 +1648,28 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	return templateArr
 }
 
-func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int) {
+func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int, string) {
+
+	transcript := ""
+
+	if studentId == "" {
+		transcript = readMockData(mockData)
+	} else {
+		transcriptModel := getTranscriptWithCredit(studentId)
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
+	}
+	if strings.Contains(transcript, COOPcourse) {
+		isCOOP = "true"
+	}
 
 	templateArr := [][]string{}
 
@@ -1841,286 +1882,353 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	numberFree["Major Elective"] = int(gjson.Get(elective, `curriculum.coreAndMajorGroups.0.requiredCredits`).Int())
 	numberFree["Free"] = int(gjson.Get(elective, `curriculum.freeGroups.0.requiredCredits`).Int())
 
-	transcript := ""
-	if studentId == "" {
-		transcript = readMockData(mockData)
-	} else {
-		transcriptModel := getTranscriptWithCredit(studentId)
-
-		tm, err := json.Marshal(transcriptModel)
-		if err != nil {
-			log.Fatalln("Error is : ", err)
-		}
-
-		transcript = string(tm)
-	}
-	// check with student enroll
-	yearListNum := gjson.Get(transcript, "transcript.#").Int()
 	numOfTerm := []int{}
-	x = 0
-	if yearListNum != 0 {
+	if transcript != "" {
 
-		yearList := gjson.Get(transcript, "transcript").Array()
+		// check with student enroll
+		yearListNum := gjson.Get(transcript, "transcript.#").Int()
 
-		// loop in year
-		for y, yearDetail := range yearList {
+		x = 0
+		if yearListNum != 0 {
 
-			t := 0
-			summerList := []string{}
-			termList := yearDetail.Get("yearDetails").Array()
-			if len(termList) == 3 {
-				summerTerm := gjson.Get(transcript, `transcript.`+strconv.Itoa(y)+`.yearDetails.2.details`).Array()
+			yearList := gjson.Get(transcript, "transcript").Array()
 
-				for _, courseDetail := range summerTerm {
+			// loop in year
+			for y, yearDetail := range yearList {
 
-					if slices.Contains[[]string](PASS_GRADE, courseDetail.Get("grade").String()) {
-						summerList = append(summerList, courseDetail.Get("code").String())
+				t := 0
+				summerList := []string{}
+				termList := yearDetail.Get("yearDetails").Array()
+				if len(termList) == 3 {
+					summerTerm := gjson.Get(transcript, `transcript.`+strconv.Itoa(y)+`.yearDetails.2.details`).Array()
+
+					for _, courseDetail := range summerTerm {
+
+						if slices.Contains[[]string](PASS_GRADE, courseDetail.Get("grade").String()) {
+							summerList = append(summerList, courseDetail.Get("code").String())
+						}
 					}
 				}
-			}
 
-			// loop in semester
-			for _, termDetail := range termList {
+				// loop in semester
+				for _, termDetail := range termList {
 
-				pass := []string{}
-				freePass := []string{}
+					pass := []string{}
+					freePass := []string{}
 
-				detail := termDetail.Get("details").Array()
+					detail := termDetail.Get("details").Array()
 
-				// add success course in pass[]
-				for _, courseDetail := range detail {
+					// add success course in pass[]
+					for _, courseDetail := range detail {
 
-					grade := courseDetail.Get("grade").String()
+						grade := courseDetail.Get("grade").String()
 
-					//check if success
-					if slices.Contains[[]string](PASS_GRADE, grade) {
+						//check if success
+						if slices.Contains[[]string](PASS_GRADE, grade) {
 
-						// check if it elective course
-						code := courseDetail.Get("code").String()
-						_, isReq := listOfCourse[code]
-						if !isReq {
+							// check if it elective course
+							code := courseDetail.Get("code").String()
+							_, isReq := listOfCourse[code]
+							if !isReq {
 
-							// check elective group
-							group, _ := checkGroup(fullCurriculum, code)
-							credit := courseDetail.Get("credit").Int()
-							// courseDetail := getCourseDetail(code)
+								// check elective group
+								group, _ := checkGroup(fullCurriculum, code)
+								credit := courseDetail.Get("credit").Int()
+								// courseDetail := getCourseDetail(code)
 
-							// add to list of study course
-							listOfCourse[code] = &model.CurriculumCourseDetail2{
-								CourseNo:          code,
-								RecommendSemester: 0,
-								RecommendYear:     0,
-								Prerequisites:     []string{},
-								Corequisite:       "",
-								Credits:           int(credit),
-								GroupName:         group,
+								// add to list of study course
+								listOfCourse[code] = &model.CurriculumCourseDetail2{
+									CourseNo:          code,
+									RecommendSemester: 0,
+									RecommendYear:     0,
+									Prerequisites:     []string{},
+									Corequisite:       "",
+									Credits:           int(credit),
+									GroupName:         group,
+								}
+
+								// edit credit
+								// if numberFree[group] <= 0 {
+								numberFree[group] = numberFree[group] - int(credit)
+								// } else {
+								// 	numberFree["Free"] = numberFree["Free"] - int(credit)
+								// }
+
+								freePass = append(freePass, code)
+								pass = append(pass, group)
+
+							} else {
+								pass = append(pass, code)
 							}
 
-							// edit credit
-							// if numberFree[group] <= 0 {
-							numberFree[group] = numberFree[group] - int(credit)
-							// } else {
-							// 	numberFree["Free"] = numberFree["Free"] - int(credit)
-							// }
+						}
+					}
 
-							freePass = append(freePass, code)
-							pass = append(pass, group)
+					// map study course into template
+					// check if summer term
+					if t == 2 {
+						// summer term add 1 row
+						lenX := len(templateArr[x])
+						term3 := []string{}
+						// ใส่ summer term โดยตรวจว่ามีเส้นเชื่อมไหม
+						for k := 0; k < lenX; k++ {
 
-						} else {
-							pass = append(pass, code)
+							if templateArr[x-1][k] != "000000" && templateArr[x][k] != "000000" {
+								term3 = append(term3, "111111")
+							} else {
+								term3 = append(term3, "000000")
+							}
+
+						}
+						templateArr = slices.Insert[[][]string](templateArr, x, term3)
+
+						// ใส่ตัวที่มีใน template ก่อน
+						for _, c := range pass {
+							term, index := checkTermAndIndex(templateArr, c)
+							if term != -1 && index != -1 {
+								templateArr[x][index] = c
+								templateArr[term][index] = "111111"
+
+							}
+						}
+
+					} else {
+
+						first := true
+						for index, temp := range templateArr[x] {
+
+							contain := slices.Contains[[]string](pass, temp)
+							if !contain && temp != "000000" && temp != "111111" {
+
+								last := len(templateArr)
+								lenX := len(templateArr[x])
+
+								// check ว่าช่องสุดท้ายที่จะเลื่อนไปว่างไหม ถ้าว่างก็ไม่ต้องเพิ่มแถว
+								// && (templateArr[last-1][lenX-1] != "000000" || templateArr[last-2][lenX-1] != "000000")
+								if !first {
+									last = last - 2
+								}
+
+								if first {
+
+									term := []string{}
+									term2 := []string{}
+									for k := 0; k < lenX; k++ {
+										term = append(term, "000000")
+										term2 = append(term2, "000000")
+									}
+
+									templateArr = append(templateArr, term)
+									templateArr = append(templateArr, term2)
+									first = false
+								}
+
+								// loop เลื่อน course ที่ยังไม่ได้เรียน
+								// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
+								// if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
+
+								// สำหรับการณีที่ไม่มี summer
+								// if len(termList) != 3 {
+								// log.Println("update : ")
+								// templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse)
+								//  } else
+								if len(termList) == 3 && t == 1 && slices.Contains[[]string](summerList, temp) {
+									// สำหรับการณีที่มี summer และเป็น term 2 และเรียนใน summer
+									// do notting
+								} else {
+									// สำหรับการณีที่มี summer และเป็น term 1
+
+									templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
+								}
+
+							}
+
+							if index == requiredRow-1 {
+								break
+							}
+
 						}
 
 					}
+
+					// map elective couse that pass in template
+					// แบบใส่ต่อเข้าไปข้างท้าย
+					// for _, f := range freePass {
+					// 	lenX := len(templateArr[x])
+					// 	if lenX == requiredRow {
+					// 		insertRow(&templateArr, lenX, corequisiteList)
+					// 		templateArr[x][lenX] = f
+					// 	} else {
+					// 		addRow := true
+					// 		for u := requiredRow; u < lenX; u++ {
+					// 			if templateArr[x][u] == "000000" {
+					// 				templateArr[x][u] = f
+					// 				addRow = false
+					// 				break
+					// 			}
+					// 		}
+
+					// 		if addRow {
+					// 			insertRow(&templateArr, lenX, corequisiteList)
+					// 			templateArr[x][lenX] = f
+					// 		}
+					// 	}
+					// }
+
+					for _, f := range freePass {
+						for i, temp := range templateArr[x] {
+							if temp == "000000" {
+								templateArr[x][i] = f
+								break
+							}
+						}
+					}
+
+					log.Println("after map to template term ", x+1, " : ", templateArr)
+
+					t++
+					x++
+
 				}
 
-				// map study course into template
-				// check if summer term
-				if t == 2 {
-					// summer term add 1 row
-					lenX := len(templateArr[x])
-					term3 := []string{}
-					// ใส่ summer term โดยตรวจว่ามีเส้นเชื่อมไหม
-					for k := 0; k < lenX; k++ {
+				// เก็บถึงเทอมที่เรียนเสร็จ
+				numOfTerm = append(numOfTerm, t)
+			}
+		}
 
-						if templateArr[x-1][k] != "000000" && templateArr[x][k] != "000000" {
-							term3 = append(term3, "111111")
-						} else {
-							term3 = append(term3, "000000")
+		// ตรวจว่าเลื่อนไปกี่เทอม
+		addNew := len(templateArr) - 8
+		log.Println("addNew : ", addNew)
+
+		// map free elective ที่เหลือเข้าไปใน template
+		// GE
+		for l := 0; l < int(geNum); l++ {
+
+			groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
+			geCourse := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.electiveCourses`).Array()
+
+			log.Println("numberFree[groupName] : ", numberFree[groupName])
+			// check need more credit
+			have := -1
+			if numberFree[groupName] > 0 {
+				needMore := numberFree[groupName] / 3
+				if numberFree[groupName]%3 != 0 {
+					needMore = needMore + 1
+				}
+
+				have = len(geCourse) - needMore
+			}
+
+			for _, ge := range geCourse {
+
+				if have == 0 {
+
+					// คำนวณเทอมใหม่ อิงจากเทอมที่ควรจะอยู่
+					term := ge.Get("recommendSemester").Int()
+					year := ge.Get("recommendYear").Int()
+					x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
+
+					success := false
+					for i, temp := range templateArr[x] {
+						if temp == "000000" {
+							templateArr[x][i] = groupName
+							success = true
+							break
 						}
-
 					}
-					templateArr = slices.Insert[[][]string](templateArr, x, term3)
 
-					// ใส่ตัวที่มีใน template ก่อน
-					for _, c := range pass {
-						term, index := checkTermAndIndex(templateArr, c)
-						if term != -1 && index != -1 {
-							templateArr[x][index] = c
-							templateArr[term][index] = "111111"
-
-						}
+					// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
+					if !success {
+						lenX := len(templateArr[x])
+						insertRow(&templateArr, lenX, corequisiteList)
+						templateArr[x][lenX] = "Free"
 					}
 
 				} else {
-
-					first := true
-					for index, temp := range templateArr[x] {
-
-						contain := slices.Contains[[]string](pass, temp)
-						if !contain && temp != "000000" && temp != "111111" {
-
-							last := len(templateArr)
-							lenX := len(templateArr[x])
-
-							// check ว่าช่องสุดท้ายที่จะเลื่อนไปว่างไหม ถ้าว่างก็ไม่ต้องเพิ่มแถว
-							// && (templateArr[last-1][lenX-1] != "000000" || templateArr[last-2][lenX-1] != "000000")
-							if !first {
-								last = last - 2
-							}
-
-							if first {
-
-								term := []string{}
-								term2 := []string{}
-								for k := 0; k < lenX; k++ {
-									term = append(term, "000000")
-									term2 = append(term2, "000000")
-								}
-
-								templateArr = append(templateArr, term)
-								templateArr = append(templateArr, term2)
-								first = false
-							}
-
-							// loop เลื่อน course ที่ยังไม่ได้เรียน
-							// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
-							// if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
-
-							// สำหรับการณีที่ไม่มี summer
-							// if len(termList) != 3 {
-							// log.Println("update : ")
-							// templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse)
-							//  } else
-							if len(termList) == 3 && t == 1 && slices.Contains[[]string](summerList, temp) {
-								// สำหรับการณีที่มี summer และเป็น term 2 และเรียนใน summer
-								// do notting
-							} else {
-								// สำหรับการณีที่มี summer และเป็น term 1
-
-								templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
-							}
-
-						}
-
-						if index == requiredRow-1 {
-							break
-						}
-
-					}
-
+					have--
 				}
-
-				// map elective couse that pass in template
-				// แบบใส่ต่อเข้าไปข้างท้าย
-				// for _, f := range freePass {
-				// 	lenX := len(templateArr[x])
-				// 	if lenX == requiredRow {
-				// 		insertRow(&templateArr, lenX, corequisiteList)
-				// 		templateArr[x][lenX] = f
-				// 	} else {
-				// 		addRow := true
-				// 		for u := requiredRow; u < lenX; u++ {
-				// 			if templateArr[x][u] == "000000" {
-				// 				templateArr[x][u] = f
-				// 				addRow = false
-				// 				break
-				// 			}
-				// 		}
-
-				// 		if addRow {
-				// 			insertRow(&templateArr, lenX, corequisiteList)
-				// 			templateArr[x][lenX] = f
-				// 		}
-				// 	}
-				// }
-
-				for _, f := range freePass {
-					for i, temp := range templateArr[x] {
-						if temp == "000000" {
-							templateArr[x][i] = f
-							break
-						}
-					}
-				}
-
-				log.Println("after map to template term ", x+1, " : ", templateArr)
-
-				t++
-				x++
 
 			}
 
-			// เก็บถึงเทอมที่เรียนเสร็จ
-			numOfTerm = append(numOfTerm, t)
 		}
-	}
 
-	// ตรวจว่าเลื่อนไปกี่เทอม
-	addNew := len(templateArr) - 8
-	log.Println("addNew : ", addNew)
+		// map free elective ที่เหลือเข้าไปใน template
+		// Major
+		majorCourse := gjson.Get(elective, `curriculum.coreAndMajorGroups.0.electiveCourses`).Array()
 
-	// map free elective ที่เหลือเข้าไปใน template
-	// GE
-	for l := 0; l < int(geNum); l++ {
+		log.Println("numberFree[Major Elective] : ", numberFree["Major Elective"])
 
-		groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
-		geCourse := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.electiveCourses`).Array()
-
-		log.Println("numberFree[groupName] : ", numberFree[groupName])
-		// check need more credit
 		have := -1
-		if numberFree[groupName] > 0 {
-			needMore := numberFree[groupName] / 3
-			if numberFree[groupName]%3 != 0 {
+		if numberFree["Major Elective"] > 0 {
+			needMore := numberFree["Major Elective"] / 3
+			if numberFree["Major Elective"]%3 != 0 {
 				needMore = needMore + 1
 			}
 
-			have = len(geCourse) - needMore
+			have = len(majorCourse) - needMore
+			log.Println("need more : ", needMore)
+
 		}
 
-		for _, ge := range geCourse {
+		for _, major := range majorCourse {
 
 			if have == 0 {
 
-				// คำนวณเทอมใหม่ อิงจากเทอมที่ควรจะอยู่
-				term := ge.Get("recommendSemester").Int()
-				year := ge.Get("recommendYear").Int()
+				term := major.Get("recommendSemester").Int()
+				year := major.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-
-				// lenX := len(templateArr[x])
-				// if lenX == requiredRow {
-				// 	insertRow(&templateArr, lenX, corequisiteList)
-				// 	templateArr[x][lenX] = groupName
-				// } else {
-				// 	addRow := true
-				// 	for u := requiredRow; u < lenX; u++ {
-				// 		if templateArr[x][u] == "000000" {
-				// 			templateArr[x][u] = groupName
-				// 			addRow = false
-				// 			break
-				// 		}
-				// 	}
-
-				// 	if addRow {
-				// 		insertRow(&templateArr, lenX, corequisiteList)
-				// 		templateArr[x][lenX] = groupName
-				// 	}
-				// }
 
 				success := false
 				for i, temp := range templateArr[x] {
 					if temp == "000000" {
-						templateArr[x][i] = groupName
+						templateArr[x][i] = "Major Elective"
+						success = true
+						break
+					}
+				}
+
+				// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
+				if !success {
+					lenX := len(templateArr[x])
+					insertRow(&templateArr, lenX, corequisiteList)
+					templateArr[x][lenX] = "Major Elective"
+				}
+
+			} else {
+				have--
+			}
+
+		}
+
+		// map free elective ที่เหลือเข้าไปใน template
+		// Free
+		freeCourse := gjson.Get(elective, `curriculum.freeGroups.0.electiveCourses`).Array()
+
+		log.Println("numberFree[Free] : ", numberFree["Free"])
+
+		have = -1
+		if numberFree["Free"] > 0 {
+			needMore := numberFree["Free"] / 3
+			if numberFree["Free"]%3 != 0 {
+				needMore = needMore + 1
+			}
+
+			log.Println("need more : ", needMore)
+
+			have = len(freeCourse) - needMore
+		}
+
+		for _, free := range freeCourse {
+
+			if have == 0 {
+				term := free.Get("recommendSemester").Int()
+				year := free.Get("recommendYear").Int()
+				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
+
+				success := false
+				for i, temp := range templateArr[x] {
+					if temp == "000000" {
+						templateArr[x][i] = "Free"
 						success = true
 						break
 					}
@@ -2138,147 +2246,10 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			}
 
 		}
-
 	}
-
-	// map free elective ที่เหลือเข้าไปใน template
-	// Major
-	majorCourse := gjson.Get(elective, `curriculum.coreAndMajorGroups.0.electiveCourses`).Array()
-
-	log.Println("numberFree[Major Elective] : ", numberFree["Major Elective"])
-
-	have := -1
-	if numberFree["Major Elective"] > 0 {
-		needMore := numberFree["Major Elective"] / 3
-		if numberFree["Major Elective"]%3 != 0 {
-			needMore = needMore + 1
-		}
-
-		have = len(majorCourse) - needMore
-		log.Println("need more : ", needMore)
-
-	}
-
-	for _, major := range majorCourse {
-
-		if have == 0 {
-
-			term := major.Get("recommendSemester").Int()
-			year := major.Get("recommendYear").Int()
-			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-
-			success := false
-			for i, temp := range templateArr[x] {
-				if temp == "000000" {
-					templateArr[x][i] = "Major Elective"
-					success = true
-					break
-				}
-			}
-
-			// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
-			if !success {
-				lenX := len(templateArr[x])
-				insertRow(&templateArr, lenX, corequisiteList)
-				templateArr[x][lenX] = "Major Elective"
-			}
-
-			// lenX := len(templateArr[x])
-			// if lenX == requiredRow {
-			// 	insertRow(&templateArr, lenX, corequisiteList)
-			// 	templateArr[x][lenX] = "Major Elective"
-			// } else {
-			// 	addRow := true
-			// 	for u := requiredRow; u < lenX; u++ {
-			// 		if templateArr[x][u] == "000000" {
-			// 			templateArr[x][u] = "Major Elective"
-			// 			addRow = false
-			// 			break
-			// 		}
-			// 	}
-
-			// 	if addRow {
-			// 		insertRow(&templateArr, lenX, corequisiteList)
-			// 		templateArr[x][lenX] = "Major Elective"
-			// 	}
-			// }
-		} else {
-			have--
-		}
-
-	}
-
-	// map free elective ที่เหลือเข้าไปใน template
-	// Free
-	freeCourse := gjson.Get(elective, `curriculum.freeGroups.0.electiveCourses`).Array()
-
-	log.Println("numberFree[Free] : ", numberFree["Free"])
-
-	have = -1
-	if numberFree["Free"] > 0 {
-		needMore := numberFree["Free"] / 3
-		if numberFree["Free"]%3 != 0 {
-			needMore = needMore + 1
-		}
-
-		log.Println("need more : ", needMore)
-
-		have = len(freeCourse) - needMore
-	}
-
-	for _, free := range freeCourse {
-
-		if have == 0 {
-			term := free.Get("recommendSemester").Int()
-			year := free.Get("recommendYear").Int()
-			x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-
-			// lenX := len(templateArr[x])
-			// if lenX == requiredRow {
-			// 	insertRow(&templateArr, lenX, corequisiteList)
-			// 	templateArr[x][lenX] = "Free"
-			// } else {
-			// 	addRow := true
-			// 	for u := requiredRow; u < lenX; u++ {
-			// 		if templateArr[x][u] == "000000" {
-			// 			templateArr[x][u] = "Free"
-			// 			addRow = false
-			// 			break
-			// 		}
-			// 	}
-
-			// 	if addRow {
-			// 		insertRow(&templateArr, lenX, corequisiteList)
-			// 		templateArr[x][lenX] = "Free"
-			// 	}
-			// }
-			// if x > len(templateArr)
-
-			success := false
-			for i, temp := range templateArr[x] {
-				if temp == "000000" {
-					templateArr[x][i] = "Free"
-					success = true
-					break
-				}
-			}
-
-			// ถ้าไม่ม่ช่องให้เติมก็เพิ่มช่องเข้าไป
-			if !success {
-				lenX := len(templateArr[x])
-				insertRow(&templateArr, lenX, corequisiteList)
-				templateArr[x][lenX] = "Free"
-			}
-
-		} else {
-			have--
-		}
-
-	}
-
 	log.Println("Final templateArr : ", templateArr)
 
-	return templateArr, listOfCourse, numOfTerm
+	return templateArr, listOfCourse, numOfTerm, isCOOP
 }
 
 func main() {
@@ -2335,7 +2306,7 @@ func main() {
 		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
-		template, summaryCredits, err := getCategoryTemplate(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
+		template, summaryCredits, isCoop, err := getCategoryTemplate(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
@@ -2346,6 +2317,7 @@ func main() {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
 
+		reponse.IsCoop = isCoop
 		reponse.SummaryCredits = summaryCredits
 
 		return c.JSON(http.StatusOK, reponse)
@@ -2360,9 +2332,9 @@ func main() {
 		mockData := c.QueryParam("mockData")
 		studentId := c.QueryParam("studentId")
 
-		templateArr, listOfCourse, numOfTerm := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
+		templateArr, listOfCourse, numOfTerm, isCoop := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
 
-		return c.JSON(http.StatusOK, echo.Map{"study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
+		return c.JSON(http.StatusOK, echo.Map{"isCoop": isCoop, "study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
 	})
 
 	e.GET("/summaryCredits", func(c echo.Context) error {

@@ -44,6 +44,7 @@ type CourseDetailResponse struct {
 
 type CategoryResponse struct {
 	SummaryCredits  int              `json:"summaryCredit"`
+	IsCoop          string           `json:"isCoop"`
 	RequiredCredits int              `json:"requiredCredits"`
 	CoreCategory    []CategoryDetail `json:"coreCategory"`
 	MajorCategory   []CategoryDetail `json:"majorCategory"`
@@ -53,6 +54,7 @@ type CategoryResponse struct {
 
 type CategoryResponseV2 struct {
 	SummaryCredits  int                `json:"summaryCredit"`
+	IsCoop          string             `json:"isCoop"`
 	RequiredCredits int                `json:"requiredCredits"`
 	CoreCategory    []CategoryDetailV2 `json:"coreCategory"`
 	MajorCategory   []CategoryDetailV2 `json:"majorCategory"`
