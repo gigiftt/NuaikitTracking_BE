@@ -1199,7 +1199,7 @@ func removeIndex(s *[]string, index int) {
 	*s = append((*s)[:index], (*s)[index+1:]...)
 }
 
-func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPreList []string, havePreList []string, haveRequisite map[string][]string, corequisite string, courseNo string, prerequisites []gjson.Result) ([][]string, []string, []string, []string, map[string][]string, []string) {
+func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPreList []string, havePreList []string, haveRequisite map[string][]string, corequisite string, courseNo string, prerequisites []gjson.Result, listOfCourse map[string]*model.CurriculumCourseDetail2) ([][]string, []string, []string, []string, map[string][]string, []string) {
 
 	prerequisitesList := []string{}
 
@@ -1294,209 +1294,10 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 
 			}
 
-		} else if len(prerequisites) == 2 {
+			// } else if len(prerequisites) == 2 {
 
 			// have 2 prerequisites
-			havePreList = append(havePreList, courseNo)
-			prerequisitesList = append(prerequisitesList, prerequisites[0].String())
-			arr, h := haveRequisite[prerequisites[0].String()]
-			if !h {
-				haveRequisite[prerequisites[0].String()] = []string{courseNo}
-			} else {
-				arr = append(arr, courseNo)
-				haveRequisite[prerequisites[0].String()] = arr
-			}
-			prerequisitesList = append(prerequisitesList, prerequisites[1].String())
-			arr, h = haveRequisite[prerequisites[1].String()]
-			if !h {
-				haveRequisite[prerequisites[1].String()] = []string{courseNo}
-			} else {
-				arr = append(arr, courseNo)
-				haveRequisite[prerequisites[1].String()] = arr
-			}
-
-			// find position of prerequisites
-			preRow1 := 0
-			preCol1 := 0
-
-			preRow2 := 0
-			preCol2 := 0
-			preCourseNO2 := ""
-			for _, p := range prerequisites {
-				if slices.Contains[[]string](havePreList, p.String()) {
-					for col := range templateArr {
-						row := slices.Index[[]string](templateArr[col], p.String())
-						if row != -1 {
-							preRow1 = row
-							preCol1 = col
-							break
-						}
-					}
-				} else {
-					for col := range templateArr {
-						row := slices.Index[[]string](templateArr[col], p.String())
-						if row != -1 {
-							if preCourseNO2 == "" {
-								preRow2 = row
-								preCol2 = col
-								preCourseNO2 = p.String()
-
-							} else {
-								preRow1 = row
-								preCol1 = col
-
-							}
-							break
-						}
-					}
-				}
-			}
-
-			if preRow1+1 == preRow2 && preCol1 == preCol2 && templateArr[x][preRow1] == "000000" {
-				templateArr[x][preRow1] = courseNo
-			} else {
-
-				// เช็คว่าตต pre1 ไปจน column ล่าสุด มี course ไหนมี corequisite ไหม
-				haveCoreq := true
-				for o := preCol1; o < x; o++ {
-					if slices.Contains[[]string](corequisiteList, templateArr[o][preRow1+1]) {
-						haveCoreq = false
-						break
-					}
-				}
-
-				if !haveCoreq {
-
-					// มี course ที่มี corequisite
-					// เพิ่ม 2 แถวลงใต้ pre1 => pre1Row + 1
-
-					// เช็คว่าช่องต่อจาก pre1 ว่างไหม
-					available := true
-					for o := preCol1 + 1; o < x+1; o++ {
-						if templateArr[o][preRow1] != "000000" {
-							available = false
-							break
-						}
-					}
-
-					if available {
-						// ช่องต่อจาก pre1 ว่าง
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						templateArr[x][preRow1] = courseNo
-						templateArr[preCol2][preRow1+2] = preCourseNO2
-
-						for v := preCol2 + 1; v < x; v++ {
-
-							templateArr[v][preRow1+2] = "111111"
-
-						}
-
-					} else {
-
-						// ช่องต่อจาก pre1 ไม่ว่าง
-						// ไปใส่ช่องของ pre2 แทน
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						templateArr[x][preRow1+2] = courseNo
-						templateArr[preCol2][preRow1+2] = preCourseNO2
-
-						for v := preCol2 + 1; v < x; v++ {
-
-							templateArr[v][preRow1+2] = "111111"
-
-						}
-					}
-
-					// update ช่องเดิมของ pre2 เป็น 000000
-					if preRow2 < preRow1 {
-						templateArr[preCol2][preRow2] = "000000"
-					} else {
-
-						templateArr[preCol2][preRow2+2] = "000000"
-						preRow2 = preRow2 + 2
-					}
-
-				} else {
-
-					// ไม่มี course ไหนมี corequisite
-					// เพิ่มแถวลงใต้ pre1 => pre1Row + 1
-					available := true
-					for o := preCol1 + 1; o < x+1; o++ {
-						if templateArr[o][preRow1] != "000000" {
-							available = false
-							break
-						}
-					}
-
-					if available {
-
-						// ช่องต่อจาก pre1 ว่าง
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						templateArr[x][preRow1] = courseNo
-						templateArr[preCol2][preRow1+1] = preCourseNO2
-
-						for v := preCol2 + 1; v < x; v++ {
-
-							templateArr[v][preRow1+1] = "111111"
-
-						}
-
-					} else {
-
-						// ช่องต่อจาก pre1 ไม่ว่าง
-						// ไปใส่ช่องของ pre2 แทน
-						insertRow(&templateArr, preRow1+1, corequisiteList)
-						templateArr[x][preRow1+1] = courseNo
-						templateArr[preCol2][preRow1+1] = preCourseNO2
-
-						for v := preCol2 + 1; v < x; v++ {
-
-							templateArr[v][preRow1+1] = "111111"
-
-						}
-					}
-
-					// update ช่องเดิมของ pre2 เป็น 000000
-					if preRow2 < preRow1 {
-						templateArr[preCol2][preRow2] = "000000"
-					} else {
-						templateArr[preCol2][preRow2+1] = "000000"
-						preRow2 = preRow2 + 1
-					}
-
-				}
-
-				for i := 0; i <= x; i++ {
-					removeIndex(&templateArr[i], preRow2)
-				}
-			}
-
-		} else {
-			// เอาวิชานี้ใส่ใน havePreList
-			havePreList = append(havePreList, courseNo)
-
-			thisPreList := map[string]model.PreReqListInfo{}
-
-			// prerequisites => prereq ของ course นี้
-			for _, c := range prerequisites {
-
-				course := c.String()
-
-				havePreReq := slices.Contains[[]string](havePreList, course)
-				PreReqCourseList := []string{}
-				if havePreReq {
-					PreReqCourseList = append(PreReqCourseList)
-				}
-
-				thisPreList[course] = model.PreReqListInfo{
-					Col:              0,
-					Row:              0,
-					HavePreReq:       havePreReq,
-					PreReqCourseList: []string{},
-				}
-			}
-
+			// havePreList = append(havePreList, courseNo)
 			// prerequisitesList = append(prerequisitesList, prerequisites[0].String())
 			// arr, h := haveRequisite[prerequisites[0].String()]
 			// if !h {
@@ -1513,11 +1314,409 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 			// 	arr = append(arr, courseNo)
 			// 	haveRequisite[prerequisites[1].String()] = arr
 			// }
+
+			// // find position of prerequisites
+			// preRow1 := 0
+			// preCol1 := 0
+
+			// preRow2 := 0
+			// preCol2 := 0
+			// preCourseNO2 := ""
+			// for _, p := range prerequisites {
+			// 	if slices.Contains[[]string](havePreList, p.String()) {
+			// 		for col := range templateArr {
+			// 			row := slices.Index[[]string](templateArr[col], p.String())
+			// 			if row != -1 {
+			// 				preRow1 = row
+			// 				preCol1 = col
+			// 				break
+			// 			}
+			// 		}
+			// 	} else {
+			// 		for col := range templateArr {
+			// 			row := slices.Index[[]string](templateArr[col], p.String())
+			// 			if row != -1 {
+			// 				if preCourseNO2 == "" {
+			// 					preRow2 = row
+			// 					preCol2 = col
+			// 					preCourseNO2 = p.String()
+
+			// 				} else {
+			// 					preRow1 = row
+			// 					preCol1 = col
+
+			// 				}
+			// 				break
+			// 			}
+			// 		}
+			// 	}
+			// }
+
+			// if preRow1+1 == preRow2 && preCol1 == preCol2 && templateArr[x][preRow1] == "000000" {
+			// 	templateArr[x][preRow1] = courseNo
+			// } else {
+
+			// 	// เช็คว่าตต pre1 ไปจน column ล่าสุด มี course ไหนมี corequisite ไหม
+			// 	haveCoreq := true
+			// 	for o := preCol1; o < x; o++ {
+			// 		if slices.Contains[[]string](corequisiteList, templateArr[o][preRow1+1]) {
+			// 			haveCoreq = false
+			// 			break
+			// 		}
+			// 	}
+
+			// 	if !haveCoreq {
+
+			// 		// มี course ที่มี corequisite
+			// 		// เพิ่ม 2 แถวลงใต้ pre1 => pre1Row + 1
+
+			// 		// เช็คว่าช่องต่อจาก pre1 ว่างไหม
+			// 		available := true
+			// 		for o := preCol1 + 1; o < x+1; o++ {
+			// 			if templateArr[o][preRow1] != "000000" {
+			// 				available = false
+			// 				break
+			// 			}
+			// 		}
+
+			// 		if available {
+			// 			// ช่องต่อจาก pre1 ว่าง
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			templateArr[x][preRow1] = courseNo
+			// 			templateArr[preCol2][preRow1+2] = preCourseNO2
+
+			// 			for v := preCol2 + 1; v < x; v++ {
+
+			// 				templateArr[v][preRow1+2] = "111111"
+
+			// 			}
+
+			// 		} else {
+
+			// 			// ช่องต่อจาก pre1 ไม่ว่าง
+			// 			// ไปใส่ช่องของ pre2 แทน
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			templateArr[x][preRow1+2] = courseNo
+			// 			templateArr[preCol2][preRow1+2] = preCourseNO2
+
+			// 			for v := preCol2 + 1; v < x; v++ {
+
+			// 				templateArr[v][preRow1+2] = "111111"
+
+			// 			}
+			// 		}
+
+			// 		// update ช่องเดิมของ pre2 เป็น 000000
+			// 		if preRow2 < preRow1 {
+			// 			templateArr[preCol2][preRow2] = "000000"
+			// 		} else {
+
+			// 			templateArr[preCol2][preRow2+2] = "000000"
+			// 			preRow2 = preRow2 + 2
+			// 		}
+
+			// 	} else {
+
+			// 		// ไม่มี course ไหนมี corequisite
+			// 		// เพิ่มแถวลงใต้ pre1 => pre1Row + 1
+			// 		available := true
+			// 		for o := preCol1 + 1; o < x+1; o++ {
+			// 			if templateArr[o][preRow1] != "000000" {
+			// 				available = false
+			// 				break
+			// 			}
+			// 		}
+
+			// 		if available {
+
+			// 			// ช่องต่อจาก pre1 ว่าง
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			templateArr[x][preRow1] = courseNo
+			// 			templateArr[preCol2][preRow1+1] = preCourseNO2
+
+			// 			for v := preCol2 + 1; v < x; v++ {
+
+			// 				templateArr[v][preRow1+1] = "111111"
+
+			// 			}
+
+			// 		} else {
+
+			// 			// ช่องต่อจาก pre1 ไม่ว่าง
+			// 			// ไปใส่ช่องของ pre2 แทน
+			// 			insertRow(&templateArr, preRow1+1, corequisiteList)
+			// 			templateArr[x][preRow1+1] = courseNo
+			// 			templateArr[preCol2][preRow1+1] = preCourseNO2
+
+			// 			for v := preCol2 + 1; v < x; v++ {
+
+			// 				templateArr[v][preRow1+1] = "111111"
+
+			// 			}
+			// 		}
+
+			// 		// update ช่องเดิมของ pre2 เป็น 000000
+			// 		if preRow2 < preRow1 {
+			// 			templateArr[preCol2][preRow2] = "000000"
+			// 		} else {
+			// 			templateArr[preCol2][preRow2+1] = "000000"
+			// 			preRow2 = preRow2 + 1
+			// 		}
+
+			// 	}
+
+			// 	for i := 0; i <= x; i++ {
+			// 		removeIndex(&templateArr[i], preRow2)
+			// 	}
+			// }
+
+		} else {
+			// เอาวิชานี้ใส่ใน havePreList
+			havePreList = append(havePreList, courseNo)
+
+			thisPreList := map[string]model.PreReqListInfo{}
+
+			// course ที่จะเอาตัวนี้มาต่อ
+			headCourse := ""
+
+			// prerequisites => prereq ของ course นี้
+			for _, c := range prerequisites {
+
+				course := c.String()
+
+				havePreReq := slices.Contains[[]string](havePreList, course)
+
+				// ถ้าตัวพรีตัวนี้มีตัวพรีตัวก่อนหน้าอีก
+				if havePreReq {
+					term, row := checkTermAndIndex(templateArr, course)
+					b, PreReqCourseList := getAllListCourse(templateArr, course, haveRequisite, listOfCourse, row)
+					log.Println("course : ", course)
+					log.Println("b : ", b)
+					log.Println("PreReqCourseList : ", PreReqCourseList)
+					if !b && headCourse == "" && templateArr[x][row] == "" {
+						headCourse = course
+					} else if b && headCourse == "" && len(PreReqCourseList) > 0 && templateArr[x][row] == "" {
+						headCourse = course
+					}
+
+					thisPreList[course] = model.PreReqListInfo{
+						Col:              term,
+						Row:              row,
+						HavePreReq:       havePreReq,
+						Move:             b,
+						PreReqCourseList: PreReqCourseList,
+					}
+				} else {
+
+					term, row := checkTermAndIndex(templateArr, course)
+					thisPreList[course] = model.PreReqListInfo{
+						Col:        term,
+						Row:        row,
+						Move:       true,
+						HavePreReq: havePreReq,
+					}
+				}
+			}
+
+			if headCourse == "" {
+				for key, value := range thisPreList {
+					if !value.Move {
+						headCourse = key
+						break
+					} else {
+						if len(value.PreReqCourseList) > 0 {
+							headCourse = key
+							break
+						} else {
+							headCourse = key
+						}
+					}
+				}
+			}
+
+			detail, b := thisPreList[headCourse]
+			if b {
+				if templateArr[x][detail.Row] == "" {
+					templateArr[x][detail.Row] = courseNo
+
+					// check ว่าในแถวมี coreq ไหม
+					haveCoreq := true
+					for o := detail.Col; o < x; o++ {
+						if slices.Contains[[]string](corequisiteList, templateArr[o][detail.Row+1]) {
+							haveCoreq = false
+							break
+						}
+					}
+
+					for key, value := range thisPreList {
+						if haveCoreq {
+							if key != headCourse && value.Move {
+								insertRow(&templateArr, detail.Row+1, corequisiteList)
+								insertRow(&templateArr, detail.Row+1, corequisiteList)
+
+								farestCol := -1
+								oldRow := -1
+
+								for _, d := range value.PreReqCourseList {
+
+									templateArr[d.Term][detail.Row+2] = d.CourseCode
+
+									if farestCol < d.Term {
+										farestCol = d.Term
+									}
+									if d.Row > detail.Row {
+										oldRow = d.Row + 2
+									} else {
+										oldRow = d.Row
+									}
+								}
+
+								// update เส้นเชื่อม
+								for v := farestCol + 1; v < x; v++ {
+									templateArr[v][detail.Row+2] = "111111"
+								}
+
+								// ลบก่อนย้ายทิ้ง
+								for i := 0; i <= x; i++ {
+									removeIndex(&templateArr[i], oldRow)
+								}
+
+							} else {
+
+								available := true
+								for o := value.Col + 1; o < x+1; o++ {
+									if templateArr[o][value.Row] != "000000" {
+										available = false
+										break
+									}
+								}
+
+								if available {
+									for v := value.Col + 1; v < x; v++ {
+										templateArr[v][detail.Row+2] = "111111"
+									}
+								}
+
+							}
+
+						} else {
+							if key != headCourse && value.Move {
+								insertRow(&templateArr, detail.Row+1, corequisiteList)
+
+								farestCol := -1
+								oldRow := -1
+
+								for _, d := range value.PreReqCourseList {
+
+									templateArr[d.Term][detail.Row+1] = d.CourseCode
+
+									if farestCol < d.Term {
+										farestCol = d.Term
+									}
+									if d.Row > detail.Row {
+										oldRow = d.Row + 1
+									} else {
+										oldRow = d.Row
+									}
+								}
+
+								// update เส้นเชื่อม
+								for v := farestCol + 1; v < x; v++ {
+									templateArr[v][detail.Row+1] = "111111"
+								}
+
+								// ลบก่อนย้ายทิ้ง
+								for i := 0; i <= x; i++ {
+									removeIndex(&templateArr[i], oldRow)
+								}
+
+							} else {
+
+								available := true
+								for o := value.Col + 1; o < x+1; o++ {
+									if templateArr[o][value.Row] != "000000" {
+										available = false
+										break
+									}
+								}
+
+								if available {
+									for v := value.Col + 1; v < x; v++ {
+										templateArr[v][detail.Row+1] = "111111"
+									}
+								}
+
+							}
+						}
+
+					}
+				} else {
+					insertRow(&templateArr, detail.Row-1, corequisiteList)
+					templateArr[x][detail.Row] = courseNo
+				}
+			}
+
 		}
 
 	}
 
 	return templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList
+}
+
+func getAllListCourse(templateArr [][]string, startCourse string, haveRequisite map[string][]string, listOfCourse map[string]*model.CurriculumCourseDetail2, column int) (bool, []model.CourseList) {
+
+	// true เมื่อสามารถย้ายทั้งแถวตัวต่อได้
+	// false เมื่อไม่สามารถย้ายได้ => ตัวที่ตัวต่อทั้งหมดไม่ได้อยู่บนแถวเดียวกัน
+
+	// ถ้ามีตัว pre 2 ตัวก็จะไม่ย้าย
+	// ถ้าตัวก่อน มีตัวต่อ 2 ตัวก็ไม่ย้าย
+
+	// check หา detail ของ course
+	detail, b := listOfCourse[startCourse]
+	list := []model.CourseList{}
+	if b {
+
+		// หาตำแหน่งของ course
+		term, row := checkTermAndIndex(templateArr, startCourse)
+		list = append(list, model.CourseList{
+			CourseCode: startCourse,
+			Term:       term,
+			Row:        row,
+		})
+
+		req, bb := haveRequisite[startCourse]
+		if bb {
+			if len(req) > 1 {
+				return false, list
+			} else if len(detail.Prerequisites) > 1 {
+				return false, list
+			} else {
+				for _, c := range detail.Prerequisites {
+					bb, f := getAllListCourse(templateArr, c, haveRequisite, listOfCourse, row)
+					list = append(list, f...)
+					if !bb {
+						return bb, list
+					}
+				}
+			}
+		} else {
+			if len(detail.Prerequisites) > 1 {
+				return false, list
+			} else {
+				for _, c := range detail.Prerequisites {
+					bb, f := getAllListCourse(templateArr, c, haveRequisite, listOfCourse, row)
+					list = append(list, f...)
+					if !bb {
+						return bb, list
+					}
+				}
+			}
+		}
+	}
+
+	return true, list
 }
 
 func checkTermAndIndex(templateArr [][]string, course string) (int, int) {
@@ -1717,7 +1916,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					prerequisites := core.Get("prerequisites").Array()
 					corequisite := core.Get("corequisite").String()
 
-					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites)
+					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
 						CourseNo:      courseNo,
@@ -1735,7 +1934,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					prerequisites := major.Get("prerequisites").Array()
 					corequisite := major.Get("corequisite").String()
 
-					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites)
+					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
 						CourseNo:      courseNo,
@@ -1754,7 +1953,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						prerequisites := major.Get("prerequisites").Array()
 						corequisite := major.Get("corequisite").String()
 
-						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites)
+						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 						listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
 							CourseNo:      courseNo,
@@ -1777,7 +1976,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						prerequisites := ge.Get("prerequisites").Array()
 						corequisite := ge.Get("corequisite").String()
 
-						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites)
+						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 						listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
 							CourseNo:      courseNo,

@@ -45,5 +45,6 @@ type PreReqListInfo struct {
 	Col              int
 	Row              int
 	HavePreReq       bool
-	PreReqCourseList []string
+	Move             bool
+	PreReqCourseList []CourseList
 }
