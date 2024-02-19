@@ -1313,7 +1313,6 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 				havePreReq := slices.Contains[[]string](havePreList, course)
 
 				// ถ้าตัวพรีตัวนี้มีตัวพรีตัวก่อนหน้าอีก
-				log.Println(templateArr)
 				if havePreReq {
 					log.Println("course : ", course)
 					term, row := checkTermAndIndex(templateArr, course)
@@ -1364,7 +1363,7 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 			log.Println("headCourse : ", headCourse)
 			detail, b := thisPreList[headCourse]
 			if b {
-				log.Println(detail.Row)
+
 				if templateArr[x][detail.Row] == "000000" {
 					templateArr[x][detail.Row] = courseNo
 
@@ -1377,20 +1376,39 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 						}
 					}
 
-					log.Println("thisPreList : ", thisPreList)
+					log.Println("haveCoreq : ", haveCoreq)
 
 					for key, value := range thisPreList {
 
 						log.Println("key : ", key)
 
-						if haveCoreq {
+						if !haveCoreq {
+							// ในแถวมี coreq จะแทรก 2 แถว
+							log.Println("have co course")
+							log.Println("key : ", key)
+							log.Println("value.Move : ", value.Move)
+
 							if key != headCourse && value.Move {
+
 								insertRow(&templateArr, detail.Row+1, corequisiteList)
 								insertRow(&templateArr, detail.Row+1, corequisiteList)
 
+								log.Println("templateArr after insert : ", templateArr)
 								farestCol := value.Col
 								oldRow := value.Row
+								if value.Row > detail.Row {
+									oldRow = value.Row + 2
+								} else {
+									oldRow = value.Row
+								}
 
+								// ย้านที่ตัวแรก
+								templateArr[value.Col][detail.Row+2] = key
+
+								log.Println("detail : ", detail)
+								log.Println("PreReqCourseList : ", value.PreReqCourseList)
+
+								// ถ้าเป็นสายก็ย้ายที่
 								for _, d := range value.PreReqCourseList {
 
 									templateArr[d.Term][detail.Row+2] = d.CourseCode
@@ -1398,11 +1416,7 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 									if farestCol < d.Term {
 										farestCol = d.Term
 									}
-									if d.Row > detail.Row {
-										oldRow = d.Row + 2
-									} else {
-										oldRow = d.Row
-									}
+
 								}
 
 								// update เส้นเชื่อม
@@ -1425,6 +1439,8 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 									}
 								}
 
+								log.Println("available : ", available)
+
 								if available {
 									for v := value.Col + 1; v < x; v++ {
 										templateArr[v][detail.Row+2] = "111111"
@@ -1434,6 +1450,8 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 							}
 
 						} else {
+
+							// ในแถววไม่มี coreq จะแทรก 1 แถว
 							if key != headCourse && value.Move {
 								insertRow(&templateArr, detail.Row+1, corequisiteList)
 
@@ -1488,6 +1506,59 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 				} else {
 					insertRow(&templateArr, detail.Row-1, corequisiteList)
 					templateArr[x][detail.Row] = courseNo
+
+					for key, value := range thisPreList {
+						// ในแถววไม่มี coreq จะแทรก 1 แถว
+						if key != headCourse && value.Move {
+							insertRow(&templateArr, detail.Row, corequisiteList)
+
+							farestCol := value.Col
+							oldRow := value.Row
+
+							for _, d := range value.PreReqCourseList {
+
+								templateArr[d.Term][detail.Row] = d.CourseCode
+
+								if farestCol < d.Term {
+									farestCol = d.Term
+								}
+								if d.Row > detail.Row {
+									oldRow = d.Row + 1
+								} else {
+									oldRow = d.Row
+								}
+							}
+
+							// update เส้นเชื่อม
+							for v := farestCol + 1; v < x; v++ {
+								templateArr[v][detail.Row] = "111111"
+							}
+
+							// ลบก่อนย้ายทิ้ง
+							for i := 0; i <= x; i++ {
+
+								removeIndex(&templateArr[i], oldRow)
+							}
+
+						} else {
+
+							available := true
+							for o := value.Col + 1; o < x+1; o++ {
+								if templateArr[o][value.Row] != "000000" {
+									available = false
+									break
+								}
+							}
+
+							if available {
+								for v := value.Col + 1; v < x; v++ {
+									templateArr[v][detail.Row] = "111111"
+								}
+							}
+
+						}
+					}
+
 				}
 			}
 
@@ -1525,6 +1596,8 @@ func getAllListCourse(templateArr [][]string, startCourse string, haveRequisite 
 				return false, list
 			} else if len(detail.Prerequisites) > 1 {
 				return false, list
+			} else if len(detail.Corequisite) != 0 {
+				return false, list
 			} else {
 				for _, c := range detail.Prerequisites {
 					bb, f := getAllListCourse(templateArr, c, haveRequisite, listOfCourse, row)
@@ -1536,6 +1609,8 @@ func getAllListCourse(templateArr [][]string, startCourse string, haveRequisite 
 			}
 		} else {
 			if len(detail.Prerequisites) > 1 {
+				return false, list
+			} else if len(detail.Corequisite) != 0 {
 				return false, list
 			} else {
 				for _, c := range detail.Prerequisites {
