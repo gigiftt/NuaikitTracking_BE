@@ -1309,6 +1309,8 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 			for _, c := range prerequisites {
 
 				course := c.String()
+
+				// เพิ่ม pre
 				prerequisitesList = append(prerequisitesList, course)
 
 				havePreReq := slices.Contains[[]string](havePreList, course)
