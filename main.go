@@ -1770,7 +1770,7 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	return templateArr
 }
 
-func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int, string) {
+func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int, string, map[string][]string) {
 
 	transcript := ""
 
@@ -2368,7 +2368,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	}
 	log.Println("Final templateArr : ", templateArr)
 
-	return templateArr, listOfCourse, numOfTerm, isCOOP
+	return templateArr, listOfCourse, numOfTerm, isCOOP, haveRequisite
 }
 
 func main() {
@@ -2451,9 +2451,9 @@ func main() {
 		mockData := c.QueryParam("mockData")
 		studentId := c.QueryParam("studentId")
 
-		templateArr, listOfCourse, numOfTerm, isCoop := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
+		templateArr, listOfCourse, numOfTerm, isCoop, haveRequisite := getTermTemplateV2(year, curriculumProgram, isCOOP, studentId, mockData)
 
-		return c.JSON(http.StatusOK, echo.Map{"isCoop": isCoop, "study term": numOfTerm, "template": templateArr, "list of course": listOfCourse})
+		return c.JSON(http.StatusOK, echo.Map{"isCoop": isCoop, "study term": numOfTerm, "template": templateArr, "list of course": listOfCourse, "haveRequisite": haveRequisite})
 	})
 
 	e.GET("/summaryCredits", func(c echo.Context) error {
