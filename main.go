@@ -2061,23 +2061,34 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 								// courseDetail := getCourseDetail(code)
 
 								// add to list of study course
-								listOfCourse[code] = &model.CurriculumCourseDetail2{
-									CourseNo:          code,
-									RecommendSemester: 0,
-									RecommendYear:     0,
-									Prerequisites:     []string{},
-									Corequisite:       "",
-									Credits:           int(credit),
-									GroupName:         group,
+								if numberFree[group] > 0 {
+									listOfCourse[code] = &model.CurriculumCourseDetail2{
+										CourseNo:          code,
+										RecommendSemester: 0,
+										RecommendYear:     0,
+										Prerequisites:     []string{},
+										Corequisite:       "",
+										Credits:           int(credit),
+										GroupName:         group,
+									}
+								} else {
+									listOfCourse[code] = &model.CurriculumCourseDetail2{
+										CourseNo:          code,
+										RecommendSemester: 0,
+										RecommendYear:     0,
+										Prerequisites:     []string{},
+										Corequisite:       "",
+										Credits:           int(credit),
+										GroupName:         "Free Elective",
+									}
 								}
 
 								// edit credit
-								// if numberFree[group] <= 0 {
-								numberFree[group] = numberFree[group] - int(credit)
-								log.Println("numberFree[group] : ", numberFree[group])
-								// } else {
-								// 	numberFree["Free"] = numberFree["Free"] - int(credit)
-								// }
+								if numberFree[group] > 0 {
+									numberFree[group] = numberFree[group] - int(credit)
+								} else {
+									numberFree["Free"] = numberFree["Free"] - int(credit)
+								}
 
 								freePass = append(freePass, code)
 								pass = append(pass, group)
