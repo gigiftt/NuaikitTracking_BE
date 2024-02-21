@@ -2196,6 +2196,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 		// ตรวจว่าเลื่อนไปกี่เทอม
 		addNew := len(templateArr) - 8
+		nowTerm := len(templateArr) - 1
 		log.Println("addNew : ", addNew)
 
 		// map free elective ที่เหลือเข้าไปใน template
@@ -2225,6 +2226,9 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					term := ge.Get("recommendSemester").Int()
 					year := ge.Get("recommendYear").Int()
 					x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
+					if x < nowTerm {
+						x = nowTerm
+					}
 
 					success := false
 					for i, temp := range templateArr[x] {
@@ -2275,6 +2279,9 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				term := major.Get("recommendSemester").Int()
 				year := major.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
+				if x < nowTerm {
+					x = nowTerm
+				}
 
 				success := false
 				for i, temp := range templateArr[x] {
@@ -2322,6 +2329,9 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				term := free.Get("recommendSemester").Int()
 				year := free.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
+				if x < nowTerm {
+					x = nowTerm
+				}
 
 				success := false
 				for i, temp := range templateArr[x] {
