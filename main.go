@@ -2056,6 +2056,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 								// check elective group
 								group, _ := checkGroup(fullCurriculum, code)
+								log.Println("group : ", group)
 								credit := courseDetail.Get("credit").Int()
 								// courseDetail := getCourseDetail(code)
 
@@ -2073,6 +2074,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 								// edit credit
 								// if numberFree[group] <= 0 {
 								numberFree[group] = numberFree[group] - int(credit)
+								log.Println("numberFree[group] : ", numberFree[group])
 								// } else {
 								// 	numberFree["Free"] = numberFree["Free"] - int(credit)
 								// }
@@ -2203,7 +2205,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			groupName := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.groupName`).String()
 			geCourse := gjson.Get(elective, `curriculum.geGroups.`+strconv.Itoa(l)+`.electiveCourses`).Array()
 
-			log.Println("numberFree[groupName] : ", numberFree[groupName])
+			log.Println(`numberFree[`+groupName+`] : `, numberFree[groupName])
 			// check need more credit
 			have := -1
 			if numberFree[groupName] > 0 {
