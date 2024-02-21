@@ -957,9 +957,11 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 					if slices.Contains(PASS_GRADE, grade.String()) {
 
 						group, courseType := checkGroup(curriculumString, code.String())
+
 						courseList := []model.CourseDetailResponse{}
 
 						if group == "Free" {
+
 							oldCredit := gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`).Int()
 							newCredit := oldCredit + credit
 							template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCreditsGet`, newCredit)
@@ -991,6 +993,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 							template, _ = sjson.Set(template, `freeCategory.#(groupName="Free Elective").electiveCourseList`, courseList)
 
 						} else if group == "Core" {
+
 							if courseType == "requiredCourses" {
 
 								oldCredit := gjson.Get(template, `coreCategory.#(groupName="Core").requiredCreditsGet`).Int()
@@ -1133,6 +1136,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									newCredit := oldCredit + credit
 									template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCreditsGet`, newCredit)
 
+									log.Println("elective code.String() : ", code.String())
 									if gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
 										courseList = append(courseList, model.CourseDetailResponse{
 											CourseNo:  code.String(),
@@ -1156,9 +1160,11 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 											IsPass:    true,
 										})
 									}
+
+									template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
+
 								}
 
-								template, _ = sjson.Set(template, `geCategory.#(groupName="`+group+`").electiveCourseList`, courseList)
 							}
 
 						}
@@ -1783,6 +1789,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			transcript = ""
 		}
 	}
+	log.Println(transcript)
 	if strings.Contains(transcript, COOPcourse) {
 		isCOOP = "true"
 	}
