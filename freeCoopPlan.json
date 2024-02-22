@@ -23,7 +23,7 @@
          },
           {
              "groupName":"Elective",
-             "requiredCredits":17,
+             "requiredCredits":7,
              "electiveCourses":[
                 {
                    "recommendSemester":2,
