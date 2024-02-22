@@ -1385,8 +1385,6 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 						}
 					}
 
-					log.Println("haveCoreq : ", haveCoreq)
-
 					for key, value := range thisPreList {
 
 						log.Println("key : ", key)
@@ -1657,28 +1655,37 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 
 	// เลื่อนแถวนั้นจากท้าย
 	l := numberTerm - 1
-	// reqRow := -1
-	// reqCol := -1
-	// เริ่มลูปจากตัวสุดท้ายของแถวนั้น
 
+	// เริ่มลูปจากตัวสุดท้ายของแถวนั้น
 	for l >= x {
 
 		//เช็คว่าตัวนี้เลื่อนมีตัวต่อไหม
-		log.Println("l : ", l)
-		log.Println("updateIndex : ", updateIndex)
 		_, bb := haveRequisite[templateArr[l][updateIndex]]
 
 		// ถ้ามีตัวต่อด้วยให้มีเส้นเชื่อม
 		templateArr[l+2][updateIndex] = templateArr[l][updateIndex]
 
 		detail, b := listOfCourse[templateArr[l+2][updateIndex]]
+		log.Println(templateArr[l+2][updateIndex])
 		if bb && len(detail.Prerequisites) != 0 {
 			templateArr[l][updateIndex] = "111111"
 			if l == x {
 				templateArr[l+1][updateIndex] = "111111"
 			}
 		} else {
-			templateArr[l][updateIndex] = "000000"
+			if b {
+				if len(detail.Prerequisites) != 0 {
+					for _, d := range detail.Prerequisites {
+						col, _ := checkTermAndIndex(templateArr, d)
+						for c := col + 1; c < l+2; c++ {
+							templateArr[c][updateIndex] = "111111"
+						}
+					}
+				}
+			} else {
+				templateArr[l][updateIndex] = "000000"
+			}
+
 		}
 
 		// ถ้ามีตัว coreq ให้เลื่อนตัว coreq ด้วย
@@ -1712,10 +1719,6 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 			if len(reqList) > 0 {
 				for _, req := range reqList {
 					col, index := checkTermAndIndex(templateArr, req)
-					log.Println(templateArr)
-					log.Println("req : ", req)
-					log.Println("index 1621 : ", index)
-					log.Println("updateIndex 1622 : ", updateIndex)
 
 					if index != updateIndex {
 						if index < updateRow {
@@ -1789,7 +1792,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			transcript = ""
 		}
 	}
-	log.Println(transcript)
 	if strings.Contains(transcript, COOPcourse) {
 		isCOOP = "true"
 	}
@@ -2056,7 +2058,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 								// check elective group
 								group, _ := checkGroup(fullCurriculum, code)
-								log.Println("group : ", group)
 								credit := courseDetail.Get("credit").Int()
 								// courseDetail := getCourseDetail(code)
 
@@ -2133,8 +2134,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						first := true
 						for index, temp := range templateArr[x] {
 
-							log.Println(temp)
-
 							contain := slices.Contains[[]string](pass, temp)
 							if !contain && temp != "000000" && temp != "111111" {
 
@@ -2170,7 +2169,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 									// do notting
 								} else {
 									// สำหรับการณีที่มี summer และเป็น term 1
-									log.Println("index : ", index)
+
 									templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
 								}
 
@@ -2487,6 +2486,21 @@ func main() {
 		group, courseType := checkGroup(curriculumString, courseNo)
 
 		return c.JSON(http.StatusOK, echo.Map{"group": group, "courseType": courseType})
+	})
+
+	e.GET("/courseDetail", func(c echo.Context) error {
+
+		courseId := c.QueryParam("courseId")
+
+		courseDetail, err := getCourseDetail(courseId)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"Error": err.Error()})
+		}
+
+		if len(courseDetail.CourseDetail) == 0 {
+			return c.JSON(http.StatusOK, echo.Map{"courseDetail": "Free Elective Course"})
+		}
+		return c.JSON(http.StatusOK, courseDetail)
 	})
 
 	e.GET("/test", func(c echo.Context) error {
