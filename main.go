@@ -1666,7 +1666,6 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 		templateArr[l+2][updateIndex] = templateArr[l][updateIndex]
 
 		detail, b := listOfCourse[templateArr[l+2][updateIndex]]
-		log.Println(templateArr[l+2][updateIndex])
 		if bb && len(detail.Prerequisites) != 0 {
 			templateArr[l][updateIndex] = "111111"
 			if l == x {
@@ -1699,6 +1698,21 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 
 		l = l - 1
 
+	}
+
+	detail, b := listOfCourse[templateArr[x+2][updateIndex]]
+	if b {
+		if len(detail.Prerequisites) == 0 {
+			templateArr[x+1][updateIndex] = "000000"
+			templateArr[x][updateIndex] = "000000"
+		} else {
+			templateArr[x+1][updateIndex] = "111111"
+			templateArr[x][updateIndex] = "111111"
+		}
+
+	} else {
+		templateArr[x+1][updateIndex] = "000000"
+		templateArr[x][updateIndex] = "000000"
 	}
 
 	// ไล่เช็คจากตัวแรกว่ามีตัวไหนมีตัวต่อไหม
@@ -1773,6 +1787,52 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 	return templateArr
 }
 
+func throwbackTemplate(templateArr [][]string, x int, course string, haveRequisite map[string][]string, listOfCourse map[string]*model.CurriculumCourseDetail2) [][]string {
+
+	_, index := checkTermAndIndex(templateArr, course)
+
+	_, b := listOfCourse[course]
+	if b {
+
+		for i := x + 1; i < len(templateArr); i++ {
+			if i > len(templateArr)-3 {
+				templateArr[i][index] = "000000"
+			} else {
+				log.Println("templateArr[i][index] : ", templateArr[i][index])
+				log.Println("templateArr[i+2][index] : ", templateArr[i+2][index])
+				templateArr[i][index] = templateArr[i+2][index]
+
+				// เช็คว่ามีตัวต่อที่อยู่เส้นอื่นไหม
+				req, bb := haveRequisite[templateArr[i][index]]
+				if bb {
+					if len(req) > 1 {
+						for _, r := range req {
+							_, in := checkTermAndIndex(templateArr, r)
+							if index != in {
+								templateArr = throwbackTemplate(templateArr, x, r, haveRequisite, listOfCourse)
+							}
+						}
+
+					}
+				}
+
+				//  เช็ควา่ามีตัว co ไหม
+				detail, bbb := listOfCourse[templateArr[i][index]]
+				if bbb {
+					if detail.Corequisite != "" {
+						templateArr[i][index+1] = templateArr[i+2][index+1]
+						templateArr[i+2][index+1] = "000000"
+					}
+				}
+			}
+
+		}
+
+	}
+
+	return templateArr
+}
+
 func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, studentId string, mockData string) ([][]string, map[string]*model.CurriculumCourseDetail2, []int, string, map[string][]string) {
 
 	transcript := ""
@@ -1785,6 +1845,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 		if err != nil {
 			log.Fatalln("Error is : ", err)
 		}
+		log.Println("transcriptModel : ", transcriptModel)
 
 		transcript = string(tm)
 
@@ -1841,15 +1902,19 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					courseNo := core.Get("courseNo").String()
 					prerequisites := core.Get("prerequisites").Array()
 					corequisite := core.Get("corequisite").String()
+					sem := core.Get("recommendSemester").Int()
+					year := core.Get("recommendYear").Int()
 
 					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
-						CourseNo:      courseNo,
-						Prerequisites: prerequisitesList,
-						Corequisite:   corequisite,
-						Credits:       int(core.Get("credits").Int()),
-						GroupName:     "Core",
+						CourseNo:          courseNo,
+						RecommendSemester: int(sem),
+						RecommendYear:     int(year),
+						Prerequisites:     prerequisitesList,
+						Corequisite:       corequisite,
+						Credits:           int(core.Get("credits").Int()),
+						GroupName:         "Core",
 					}
 				}
 
@@ -1859,15 +1924,19 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					courseNo := major.Get("courseNo").String()
 					prerequisites := major.Get("prerequisites").Array()
 					corequisite := major.Get("corequisite").String()
+					sem := major.Get("recommendSemester").Int()
+					year := major.Get("recommendYear").Int()
 
 					templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 					listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
-						CourseNo:      courseNo,
-						Prerequisites: prerequisitesList,
-						Corequisite:   corequisite,
-						Credits:       int(major.Get("credits").Int()),
-						GroupName:     "Major Required",
+						CourseNo:          courseNo,
+						RecommendSemester: int(sem),
+						RecommendYear:     int(year),
+						Prerequisites:     prerequisitesList,
+						Corequisite:       corequisite,
+						Credits:           int(major.Get("credits").Int()),
+						GroupName:         "Major Required",
 					}
 				}
 
@@ -1878,15 +1947,19 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						courseNo := major.Get("courseNo").String()
 						prerequisites := major.Get("prerequisites").Array()
 						corequisite := major.Get("corequisite").String()
+						sem := major.Get("recommendSemester").Int()
+						year := major.Get("recommendYear").Int()
 
 						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 						listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
-							CourseNo:      courseNo,
-							Prerequisites: prerequisitesList,
-							Corequisite:   corequisite,
-							Credits:       int(major.Get("credits").Int()),
-							GroupName:     "Major Required",
+							CourseNo:          courseNo,
+							RecommendSemester: int(sem),
+							RecommendYear:     int(year),
+							Prerequisites:     prerequisitesList,
+							Corequisite:       corequisite,
+							Credits:           int(major.Get("credits").Int()),
+							GroupName:         "Major Required",
 						}
 					}
 				}
@@ -1901,15 +1974,19 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						courseNo := ge.Get("courseNo").String()
 						prerequisites := ge.Get("prerequisites").Array()
 						corequisite := ge.Get("corequisite").String()
+						sem := ge.Get("recommendSemester").Int()
+						year := ge.Get("recommendYear").Int()
 
 						templateArr, corequisiteList, noPreList, havePreList, haveRequisite, prerequisitesList = putInTemplate(templateArr, x, corequisiteList, noPreList, havePreList, haveRequisite, corequisite, courseNo, prerequisites, listOfCourse)
 
 						listOfCourse[courseNo] = &model.CurriculumCourseDetail2{
-							CourseNo:      courseNo,
-							Prerequisites: prerequisitesList,
-							Corequisite:   corequisite,
-							Credits:       int(ge.Get("credits").Int()),
-							GroupName:     groupname,
+							CourseNo:          courseNo,
+							RecommendSemester: int(sem),
+							RecommendYear:     int(year),
+							Prerequisites:     prerequisitesList,
+							Corequisite:       corequisite,
+							Credits:           int(ge.Get("credits").Int()),
+							GroupName:         groupname,
 						}
 					}
 					n++
@@ -2039,6 +2116,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				for _, termDetail := range termList {
 
 					pass := []string{}
+					reqPass := []string{}
 					freePass := []string{}
 
 					detail := termDetail.Get("details").Array()
@@ -2059,6 +2137,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 								// check elective group
 								group, _ := checkGroup(fullCurriculum, code)
 								credit := courseDetail.Get("credit").Int()
+
 								// courseDetail := getCourseDetail(code)
 
 								// add to list of study course
@@ -2096,6 +2175,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 							} else {
 								pass = append(pass, code)
+								reqPass = append(reqPass, code)
 							}
 
 						}
@@ -2130,6 +2210,8 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						}
 
 					} else {
+
+						log.Println("pass before put in : ", pass)
 
 						first := true
 						for index, temp := range templateArr[x] {
@@ -2173,12 +2255,48 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 									templateArr = updateTemplate(templateArr, x, last, index, haveRequisite, listOfCourse, false)
 								}
 
+							} else {
+								if temp != "000000" && temp != "111111" {
+									log.Println("remove : ", temp)
+									idx := slices.Index(reqPass, temp)
+									removeIndex(&reqPass, idx)
+								}
+
 							}
 
 							if index == requiredRow-1 {
 								break
 							}
 
+						}
+
+						if len(reqPass) != 0 {
+							log.Println("pass after put in : ", reqPass)
+							for _, p := range reqPass {
+								log.Println("p : ", p)
+								term, index := checkTermAndIndex(templateArr, p)
+								log.Println("templateArr[x][index] : ", templateArr[x][index])
+								templateArr[x][index] = p
+								log.Println("templateArr[x][index] : ", templateArr[x][index])
+								log.Println("templateArr[term][index] : ", templateArr[term][index])
+								templateArr[term][index] = "000000"
+								log.Println("templateArr[term][index] : ", templateArr[term][index])
+
+								req, b := haveRequisite[p]
+								if b {
+									for _, r := range req {
+										c, bb := listOfCourse[r]
+										if bb {
+
+											oldX := ((c.RecommendYear - 1) * 2) + c.RecommendSemester - 1
+
+											if oldX > x {
+												templateArr = throwbackTemplate(templateArr, x, r, haveRequisite, listOfCourse)
+											}
+										}
+									}
+								}
+							}
 						}
 
 					}
@@ -2201,6 +2319,31 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 				// เก็บถึงเทอมที่เรียนเสร็จ
 				numOfTerm = append(numOfTerm, t)
+			}
+		}
+
+		// เช็คว่ามีเทอมเกินมาไหม
+		t := 0
+	outterLoop:
+		for i := len(templateArr) - 1; i >= 0; i-- {
+			for j := 0; j < len(templateArr[i]); j++ {
+				if templateArr[i][j] != "000000" {
+					break outterLoop
+				}
+			}
+			t++
+		}
+
+		// ลบส่วนเกินออก
+		if t%2 == 0 {
+			for i := len(templateArr) - 1; i >= 0; i-- {
+				if t > 0 {
+					templateArr = templateArr[:len(templateArr)-1]
+					t--
+				} else {
+					break
+				}
+
 			}
 		}
 
