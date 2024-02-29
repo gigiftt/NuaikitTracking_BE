@@ -1323,10 +1323,7 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 
 				// ถ้าตัวพรีตัวนี้มีตัวพรีตัวก่อนหน้าอีก
 				if havePreReq {
-					log.Println("course : ", course)
 					term, row := checkTermAndIndex(templateArr, course)
-					log.Println("term : ", term)
-					log.Println("row : ", row)
 					b, PreReqCourseList := getAllListCourse(templateArr, course, haveRequisite, listOfCourse, row)
 					if !b && headCourse == "" && templateArr[x][row] == "" {
 						headCourse = course
@@ -1387,13 +1384,8 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 
 					for key, value := range thisPreList {
 
-						log.Println("key : ", key)
-
 						if !haveCoreq {
 							// ในแถวมี coreq จะแทรก 2 แถว
-							log.Println("have co course")
-							log.Println("key : ", key)
-							log.Println("value.Move : ", value.Move)
 
 							if key != headCourse && value.Move {
 
@@ -1802,7 +1794,8 @@ func throwbackTemplate(templateArr [][]string, x int, course string, haveRequisi
 				log.Println("templateArr[i+2][index] : ", templateArr[i+2][index])
 				templateArr[i][index] = templateArr[i+2][index]
 
-				// เช็คว่ามีตัวต่อที่อยู่เส้นอื่นไหม
+				// เช็คว่ามีตัวต่อที่อยู่เส้นอื่นไหม ( ตัวที่แตกแขนงออกไปอยู่บรรทัดอื่น )
+				// มีก็ให้เลื่อนบรรทัดนั้นด้วย
 				req, bb := haveRequisite[templateArr[i][index]]
 				if bb {
 					if len(req) > 1 {
@@ -2134,11 +2127,10 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 							_, isReq := listOfCourse[code]
 							if !isReq {
 
+								log.Println("code : ", code)
 								// check elective group
 								group, _ := checkGroup(fullCurriculum, code)
 								credit := courseDetail.Get("credit").Int()
-
-								// courseDetail := getCourseDetail(code)
 
 								// add to list of study course
 								if numberFree[group] > 0 {
@@ -2191,6 +2183,8 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						for k := 0; k < lenX; k++ {
 
 							if templateArr[x-1][k] != "000000" && templateArr[x][k] != "000000" {
+								term3 = append(term3, "111111")
+							} else if templateArr[x][k] == "111111" || templateArr[x-1][k] == "111111" {
 								term3 = append(term3, "111111")
 							} else {
 								term3 = append(term3, "000000")
@@ -2257,7 +2251,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 							} else {
 								if temp != "000000" && temp != "111111" {
-									log.Println("remove : ", temp)
 									idx := slices.Index(reqPass, temp)
 									removeIndex(&reqPass, idx)
 								}
