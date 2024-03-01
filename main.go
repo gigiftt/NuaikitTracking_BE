@@ -36,7 +36,24 @@ func goDotEnvVariable(key string) string {
 }
 
 func readMockData(mockFile string) string {
-	jsonFile, err := os.Open(mockFile + ".json")
+	jsonFile, err := os.Open("./mockData/" + mockFile + ".json")
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	c, error := ioutil.ReadAll(jsonFile)
+	if error != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	return string(c)
+}
+
+func readElectiveData(electiveFile string) string {
+	jsonFile, err := os.Open("./electiveData/" + electiveFile + ".json")
 	// if we os.Open returns an error then handle it
 	if err != nil {
 		log.Fatalln(err)
@@ -2060,9 +2077,9 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 	// check program that user choose
 	// get elective course for this program
-	elective := readMockData("freeNormalPlan")
+	elective := readElectiveData("freeNormalPlan")
 	if isCOOP == "true" {
-		elective = readMockData("freeCoopPlan")
+		elective = readElectiveData("freeCoopPlan")
 	}
 
 	requiredRow := len(templateArr[0])
@@ -2078,6 +2095,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	numberFree["Free"] = int(gjson.Get(elective, `curriculum.freeGroups.0.requiredCredits`).Int())
 
 	numOfTerm := []int{}
+	allStudyTerm := 0
 	if transcript != "" {
 
 		// check with student enroll
@@ -2129,8 +2147,16 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 								log.Println("code : ", code)
 								// check elective group
+								credit := 3
 								group, _ := checkGroup(fullCurriculum, code)
-								credit := courseDetail.Get("credit").Int()
+								if group != "Free" {
+
+									detailElective, err := getCourseDetail(code)
+									if err != nil {
+										return [][]string{}, make(map[string]*model.CurriculumCourseDetail2), []int{}, "", map[string][]string{}
+									}
+									credit = detailElective.CourseDetail[0].Credits.Credits
+								}
 
 								// add to list of study course
 								if numberFree[group] > 0 {
@@ -2140,7 +2166,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 										RecommendYear:     0,
 										Prerequisites:     []string{},
 										Corequisite:       "",
-										Credits:           int(credit),
+										Credits:           credit,
 										GroupName:         group,
 									}
 								} else {
@@ -2150,16 +2176,16 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 										RecommendYear:     0,
 										Prerequisites:     []string{},
 										Corequisite:       "",
-										Credits:           int(credit),
+										Credits:           credit,
 										GroupName:         "Free Elective",
 									}
 								}
 
 								// edit credit
 								if numberFree[group] > 0 {
-									numberFree[group] = numberFree[group] - int(credit)
+									numberFree[group] = numberFree[group] - credit
 								} else {
-									numberFree["Free"] = numberFree["Free"] - int(credit)
+									numberFree["Free"] = numberFree["Free"] - credit
 								}
 
 								freePass = append(freePass, code)
@@ -2312,6 +2338,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 				// เก็บถึงเทอมที่เรียนเสร็จ
 				numOfTerm = append(numOfTerm, t)
+				allStudyTerm += t
 			}
 		}
 
@@ -2372,9 +2399,13 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					term := ge.Get("recommendSemester").Int()
 					year := ge.Get("recommendYear").Int()
 					x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-					if x < nowTerm {
+					if x < nowTerm && x < allStudyTerm {
+
 						x = nowTerm
+
 					}
+
+					log.Print("x : ", x)
 
 					success := false
 					for i, temp := range templateArr[x] {
@@ -2425,7 +2456,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				term := major.Get("recommendSemester").Int()
 				year := major.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-				if x < nowTerm {
+				if x < nowTerm && x < allStudyTerm {
 					x = nowTerm
 				}
 
@@ -2475,8 +2506,10 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				term := free.Get("recommendSemester").Int()
 				year := free.Get("recommendYear").Int()
 				x := ((int(year) - 1) * 2) + int(term) - 1 + addNew
-				if x < nowTerm {
+				if x < nowTerm && x < allStudyTerm {
+
 					x = nowTerm
+
 				}
 
 				success := false
@@ -2644,6 +2677,14 @@ func main() {
 		studentId := c.QueryParam("studentId")
 
 		mo := getTranscript(studentId)
+		return c.JSON(http.StatusOK, mo)
+	})
+
+	e.GET("/getMock", func(c echo.Context) error {
+
+		m := c.QueryParam("mockData")
+
+		mo := readMockData(m)
 		return c.JSON(http.StatusOK, mo)
 	})
 
