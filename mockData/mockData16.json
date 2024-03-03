@@ -262,7 +262,7 @@
                    {
                       "code":"261111",
                       "credit":0,
-                      "grade":"W"
+                      "grade":"A"
                    },
                    {
                       "code":"261305",
@@ -317,7 +317,7 @@
                    {
                       "code":"357101",
                       "credit":0,
-                      "grade":"A"
+                      "grade":"W"
                    }
                 ]
              },
@@ -359,6 +359,21 @@
                       "credit":0,
                       "grade":"A"
                    }
+                ]
+             },
+             {
+                "semester":3,
+                "details":[
+                    {
+                        "code":"357101",
+                        "credit":0,
+                        "grade":"A"
+                     },
+                     {
+                        "code":"357792",
+                        "credit":0,
+                        "grade":"A"
+                     }
                 ]
              }
           ]
