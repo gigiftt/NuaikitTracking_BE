@@ -70,52 +70,52 @@ func readElectiveData(electiveFile string) string {
 }
 
 func getCirriculum(year string, curriculumProgram string, isCOOP string) (string, error) {
-	// client := &http.Client{}
+	client := &http.Client{}
 
-	// cpeAPI := goDotEnvVariable("CPE_API_URL")
-	// cpeToken := goDotEnvVariable("CPE_API_TOKEN")
+	cpeAPI := goDotEnvVariable("CPE_API_URL")
+	cpeToken := goDotEnvVariable("CPE_API_TOKEN")
 
-	// url := cpeAPI + "/curriculum"
-	// bearer := "Bearer " + cpeToken
+	url := cpeAPI + "/curriculum"
+	bearer := "Bearer " + cpeToken
 
-	// req, err := http.NewRequest("GET", url, nil)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", err
-	// }
-
-	// req.Header.Add("Authorization", bearer)
-	// q := req.URL.Query()
-	// q.Add("year", year)
-	// q.Add("curriculumProgram", curriculumProgram)
-	// q.Add("isCOOPPlan", isCOOP)
-	// req.URL.RawQuery = q.Encode()
-
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-
-	// 	return "", err
-	// }
-
-	// c, error := ioutil.ReadAll(resp.Body)
-	// if error != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", err
-	// }
-
-	jsonFile, err := os.Open("cirriculum.json")
-	// if we os.Open returns an error then handle it
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("Error is : ", err)
+		return "", err
 	}
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
 
-	c, error := ioutil.ReadAll(jsonFile)
+	req.Header.Add("Authorization", bearer)
+	q := req.URL.Query()
+	q.Add("year", year)
+	q.Add("curriculumProgram", curriculumProgram)
+	q.Add("isCOOPPlan", isCOOP)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+
+		return "", err
+	}
+
+	c, error := ioutil.ReadAll(resp.Body)
 	if error != nil {
 		log.Fatalln("Error is : ", err)
+		return "", err
 	}
+
+	// jsonFile, err := os.Open("cirriculum.json")
+	// // if we os.Open returns an error then handle it
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// // defer the closing of our jsonFile so that we can parse it later on
+	// defer jsonFile.Close()
+
+	// c, error := ioutil.ReadAll(jsonFile)
+	// if error != nil {
+	// 	log.Fatalln("Error is : ", err)
+	// }
 
 	return string(c), nil
 }
@@ -167,59 +167,39 @@ func getCirriculumJSON(year string, curriculumProgram string, isCOOP string) (mo
 
 func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYear string, studySemester string) (string, model.CurriculumModel, error) {
 
-	// client := &http.Client{}
+	client := &http.Client{}
 
-	// cpeAPI := goDotEnvVariable("CPE_API_URL")
-	// cpeToken := goDotEnvVariable("CPE_API_TOKEN")
+	cpeAPI := goDotEnvVariable("CPE_API_URL")
+	cpeToken := goDotEnvVariable("CPE_API_TOKEN")
 
-	// url := cpeAPI + "/curriculum"
-	// bearer := "Bearer " + cpeToken
+	url := cpeAPI + "/curriculum"
+	bearer := "Bearer " + cpeToken
 
-	// req, err := http.NewRequest("GET", url, nil)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", model.CurriculumModel{}, err
-	// }
-
-	// req.Header.Add("Authorization", bearer)
-	// q := req.URL.Query()
-	// q.Add("year", year)
-	// q.Add("curriculumProgram", curriculumProgram)
-	// q.Add("isCOOPPlan", isCOOP)
-	// q.Add("studyYear", studyYear)
-	// q.Add("studySemester", studySemester)
-	// req.URL.RawQuery = q.Encode()
-
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", model.CurriculumModel{}, err
-	// }
-
-	// c, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", model.CurriculumModel{}, err
-	// }
-
-	// term := model.CurriculumModel{}
-	// err = json.Unmarshal(c, &term)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", model.CurriculumModel{}, err
-	// }
-
-	jsonFile, err := os.Open("y" + studyYear + "t" + studySemester + ".json")
-	// if we os.Open returns an error then handle it
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatalln(err)
-	}
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
-
-	c, error := ioutil.ReadAll(jsonFile)
-	if error != nil {
 		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
+	}
+
+	req.Header.Add("Authorization", bearer)
+	q := req.URL.Query()
+	q.Add("year", year)
+	q.Add("curriculumProgram", curriculumProgram)
+	q.Add("isCOOPPlan", isCOOP)
+	q.Add("studyYear", studyYear)
+	q.Add("studySemester", studySemester)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
+	}
+
+	c, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return "", model.CurriculumModel{}, err
 	}
 
 	term := model.CurriculumModel{}
@@ -229,70 +209,90 @@ func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYe
 		return "", model.CurriculumModel{}, err
 	}
 
+	// jsonFile, err := os.Open("y" + studyYear + "t" + studySemester + ".json")
+	// // if we os.Open returns an error then handle it
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// // defer the closing of our jsonFile so that we can parse it later on
+	// defer jsonFile.Close()
+
+	// c, error := ioutil.ReadAll(jsonFile)
+	// if error != nil {
+	// 	log.Fatalln("Error is : ", err)
+	// }
+
+	// term := model.CurriculumModel{}
+	// err = json.Unmarshal(c, &term)
+	// if err != nil {
+	// 	log.Fatalln("Error is : ", err)
+	// 	return "", model.CurriculumModel{}, err
+	// }
+
 	return string(c), term, nil
 
 }
 
 func getCourseDetail(courseNo string) (model.GetCourseDetail, error) {
-	// client := &http.Client{}
+	client := &http.Client{}
 
-	// cpeAPI := goDotEnvVariable("CPE_API_URL")
-	// cpeToken := goDotEnvVariable("CPE_API_TOKEN")
+	cpeAPI := goDotEnvVariable("CPE_API_URL")
+	cpeToken := goDotEnvVariable("CPE_API_TOKEN")
 
-	// url := cpeAPI + "/course/detail"
-	// bearer := "Bearer " + cpeToken
+	url := cpeAPI + "/course/detail"
+	bearer := "Bearer " + cpeToken
 
-	// req, err := http.NewRequest("GET", url, nil)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return model.GetCourseDetail{}, err
-	// }
-
-	// req.Header.Add("Authorization", bearer)
-	// q := req.URL.Query()
-	// q.Add("courseNo", courseNo)
-	// req.URL.RawQuery = q.Encode()
-
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return model.GetCourseDetail{}, err
-	// }
-
-	// c, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return model.GetCourseDetail{}, err
-	// }
-
-	// detail := model.GetCourseDetail{}
-
-	// err = json.Unmarshal(c, &detail)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return model.GetCourseDetail{}, err
-	// }
-
-	// return detail, nil
-	cc := []model.CourseDetail{}
-	c := model.CourseDetail{
-		CourseNo:              courseNo,
-		UpdatedYear:           0,
-		UpdatedSemester:       0,
-		CourseNameEN:          "",
-		CourseNameTH:          "",
-		CurCodeEN:             "",
-		CurCodeTH:             "",
-		DetailEN:              "",
-		DetailTH:              "",
-		Credits:               model.CreditDetail{},
-		SelectedTopicSubjects: []model.SelectedTopicSubjectDetail{},
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
 	}
-	cc = append(cc, c)
-	return model.GetCourseDetail{
-		Ok:           false,
-		CourseDetail: cc,
-	}, nil
+
+	req.Header.Add("Authorization", bearer)
+	q := req.URL.Query()
+	q.Add("courseNo", courseNo)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
+	}
+
+	c, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
+	}
+
+	detail := model.GetCourseDetail{}
+
+	err = json.Unmarshal(c, &detail)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.GetCourseDetail{}, err
+	}
+
+	return detail, nil
+	// cc := []model.CourseDetail{}
+	// c := model.CourseDetail{
+	// 	CourseNo:              courseNo,
+	// 	UpdatedYear:           0,
+	// 	UpdatedSemester:       0,
+	// 	CourseNameEN:          "",
+	// 	CourseNameTH:          "",
+	// 	CurCodeEN:             "",
+	// 	CurCodeTH:             "",
+	// 	DetailEN:              "",
+	// 	DetailTH:              "",
+	// 	Credits:               model.CreditDetail{},
+	// 	SelectedTopicSubjects: []model.SelectedTopicSubjectDetail{},
+	// }
+	// cc = append(cc, c)
+	// return model.GetCourseDetail{
+	// 	Ok:           false,
+	// 	CourseDetail: cc,
+	// }, nil
 }
 
 func getRawTranscript(studentId string) (model.CourseGrade, error) {
@@ -2428,19 +2428,27 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 		}
 
 		// เช็คว่ามีเทอมเกินมาไหม
+		// เทอมที่เกิน = เทอมที่เป็น 000000 ทั้งหมด
+		// ถ้ามีมีกี่เทอม
 		t := 0
-	outterLoop:
+	outter:
 		for i := len(templateArr) - 1; i >= 0; i-- {
 			for j := 0; j < len(templateArr[i]); j++ {
 				if templateArr[i][j] != "000000" {
-					break outterLoop
+					break outter
 				}
 			}
 			t++
 		}
 
 		// ลบส่วนเกินออก
-		if t%2 == 0 {
+		if t != 0 {
+
+			// ถ้า t ไม่ใช่เลขคู่ แสดงว่าต้องมีเทอม 2 ของปีสุดท้ายติดมา
+			if t%2 == 1 {
+				t -= 1
+			}
+
 			for i := len(templateArr) - 1; i >= 0; i-- {
 				if t > 0 {
 					templateArr = templateArr[:len(templateArr)-1]
@@ -2451,6 +2459,8 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 			}
 		}
+
+		log.Println("before map elective : ", templateArr)
 
 		// ตรวจว่าเลื่อนไปกี่เทอม
 		addNew := len(templateArr) - 8
