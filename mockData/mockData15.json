@@ -375,7 +375,26 @@
                     "grade":"A"
                  }
               ]
-           }
+           },
+           {
+            "semester":2,
+            "details":[
+                {
+                    "code":"201114",
+                    "credit":0,
+                    "grade":"A"
+                 },{
+                  "code":"261208",
+                  "credit":0,
+                  "grade":"A"
+               },
+               {
+                  "code":"261306",
+                  "credit":0,
+                  "grade":"A"
+               }
+            ]
+         }
         ]
      }
     ]

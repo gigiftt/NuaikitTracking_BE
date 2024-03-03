@@ -1,209 +1,240 @@
 {
-    "studenteId": 630610727,
-    "studentName": "Natcha Silakorn",
-    "curriculum": 2563,
-    "transcript": [
-      {
-        "year": 2563,
-        "yearDetails": [
-          {
-            "semester": 1,
-            "accumulatedCredit": 21,
-            "details": [
-              {
-                "code": "001101",
-                "course": "Fundamental English 1",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "140104",
-                "course": "Citizenship",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "206161",
-                "course": "Calculus for Engineering 1",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "207105",
-                "course": "Physic for Engineering and Argo-Industry Students 1",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "207115",
-                "course": "Physic Laboratory for Engineering and Argo-Industry Students",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "259104",
-                "course": "Engineering Drawing",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "259106",
-                "course": "Workshop Technology",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "259191",
-                "course": "Principle of Being Professional",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261103",
-                "course": "Basic Computer Engineering",
-                "credit": 3,
-                "grade": "B"
-              }
+  "status":true,
+  "studenteId":"630610727",
+  "transcript":[
+     {
+        "year":2563,
+        "yearDetails":[
+           {
+              "semester":1,
+              "details":[
+                 {
+                    "code":"001101",
+                    "credit":0,
+                    "grade":"B"
+                 },
+                 {
+                    "code":"140104",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"206161",
+                    "credit":0,
+                    "grade":"B"
+                 },
+                 {
+                    "code":"207105",
+                    "credit":0,
+                    "grade":"C+"
+                 },
+                 {
+                    "code":"207115",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"259104",
+                    "credit":0,
+                    "grade":"B"
+                 },
+                 {
+                    "code":"259106",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"259191",
+                    "credit":0,
+                    "grade":"S"
+                 },
+                 {
+                    "code":"261103",
+                    "credit":0,
+                    "grade":"A"
+                 }
+              ]
+           },
+           {
+              "semester":2,
+              "details":[
+                 {
+                    "code":"001102",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"109114",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                  "code":"206162",
+                  "credit":0,
+                  "grade":"F"
+               },
+                 {
+                    "code":"207106",
+                    "credit":0,
+                    "grade":"C+"
+                 },
+                 {
+                    "code":"207116",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"252281",
+                    "credit":0,
+                    "grade":"F"
+                 },
+                 {
+                    "code":"261102",
+                    "credit":0,
+                    "grade":"B+"
+                 }
+              ]
+           },
+           {
+            "semester":2,
+            "details":[
+               {
+                "code":"206162",
+                "credit":0,
+                "grade":"D"
+             },{
+              "code":"357101",
+                "credit":0,
+                "grade":"A"
+             }
             ]
-          },
-          {
-            "semester": 2,
-            "accumulatedCredit": 19,
-            "details": [
-              {
-                "code": "001102",
-                "course": "Fundamental English 2",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "206162",
-                "course": "Calculus for Engineering 2",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "207106",
-                "course": "Physic for Engineering and Argo-Industry Students 2",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "207116",
-                "course": "Physic Laboratory for Engineering and Argo-Industry Students 2",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261102",
-                "course": "Computer Programming",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "203100",
-                "course": "Chenmistry in Everyday life",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          }
+         }
         ]
-      },
-      {
-        "year": 2564,
-        "yearDetails": [
-          {
-            "semester": 1,
-            "accumulatedCredit": 21,
-            "details": [
-              {
-                "code": "001201",
-                "course": "Critical Reading and Effective Writing",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "206261",
-                "course": "Calculus for Engineering 3",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261207",
-                "course": "Basic Computer Engineering Laboratory",
-                "credit": 2,
-                "grade": "B"
-              },
-              {
-                "code": "261210",
-                "course": "Logic and Digital Circuits",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261212",
-                "course": "Logic and Digital Circuits Laboratory",
-                "credit": 1,
-                "grade": "B"
-              },
-              {
-                "code": "261216",
-                "course": "Discrete Mathematics for Computer Engineers",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261217",
-                "course": "Data Structure for Compouter Engineers",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "011100",
-                "course": "Man and Philosophy",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          },
-          {
-            "semester": 2,
-            "accumulatedCredit": 19,
-            "details": [
-              {
-                "code": "001225",
-                "course": "English in Science and Techology Contexts",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261200",
-                "course": "Object-Oriented Programming",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261208",
-                "course": "Numerical Computation for Engineers",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261218",
-                "course": "Algorithms for Computer Engineers",
-                "credit": 3,
-                "grade": "B"
-              },
-              {
-                "code": "261332",
-                "course": "Data and Computer Communucations",
-                "credit": 3,
-                "grade": "B"
-              }
-            ]
-          }
+     },
+     {
+        "year":2564,
+        "yearDetails":[
+           {
+              "semester":1,
+              "details":[
+                 {
+                    "code":"001201",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"206261",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"211100",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"261207",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"261210",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"261212",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"261216",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"261217",
+                    "credit":0,
+                    "grade":"W"
+                 }
+              ]
+           },
+           {
+              "semester":2,
+              "details":[
+                 {
+                    "code":"001225",
+                    "credit":0,
+                    "grade":"C+"
+                 },
+                 {
+                    "code":"261200",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"261208",
+                    "credit":0,
+                    "grade":"F"
+                 },
+                 {
+                    "code":"261218",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                  "code":"252281",
+                  "credit":0,
+                  "grade":"B"
+               },
+                 {
+                    "code":"261332",
+                    "credit":0,
+                    "grade":"W"
+                 }
+              ]
+           }
         ]
-      }
-    ]
-  }
+     },
+     {
+        "year":2565,
+        "yearDetails":[
+           {
+              "semester":1,
+              "details":[
+                 {
+                    "code":"201114",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                  "code":"261217",
+                  "credit":0,
+                  "grade":"C"
+               },
+                 {
+                    "code":"261304",
+                    "credit":0,
+                    "grade":"B+"
+                 },
+                 {
+                    "code":"261342",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"261343",
+                    "credit":0,
+                    "grade":"A"
+                 },
+                 {
+                    "code":"261494",
+                    "credit":0,
+                    "grade":"A"
+                 }
+              ]
+           }
+        ]
+     }
+  ]
+}
