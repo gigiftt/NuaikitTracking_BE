@@ -603,6 +603,21 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 	return "Free", "electiveCourses"
 }
 
+func canPutInTerm(templateArr [][]string, term int) int {
+	num := 0
+	for _, c := range templateArr[term] {
+		if c != "000000" && c != "111111" {
+			num++
+		}
+	}
+
+	if num > 6 {
+		return canPutInTerm(templateArr, term+1)
+	} else {
+		return term
+	}
+}
+
 func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (model.CategoryResponseV2, error) {
 
 	transcript := ""
@@ -1013,7 +1028,9 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 		for _, y := range yearList.Array() {
 			semester := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#`)
 			i := 1
+			log.Println("semester.Int() : ", semester.Int())
 			for i < (int(semester.Int()) + 1) {
+				log.Println("i : ", i)
 				courseList := gjson.Get(transcript, `transcript.#(year=="`+y.String()+`").yearDetails.#(semester==`+strconv.Itoa(i)+`).details`)
 				for _, c := range courseList.Array() {
 
@@ -1024,6 +1041,8 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 					if slices.Contains(PASS_GRADE, grade.String()) {
 
 						group, courseType := checkGroup(curriculumString, code.String())
+
+						log.Println("code.String() : ", code.String())
 
 						courseList := []model.CourseDetailResponse{}
 
@@ -2502,7 +2521,9 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 						x += 2
 					}
 
-					log.Print("x : ", x)
+					log.Println("x : ", x)
+					x = canPutInTerm(templateArr, x)
+					log.Println("x : ", x)
 
 					success := false
 					for i, temp := range templateArr[x] {
@@ -2561,6 +2582,8 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					x += 2
 				}
 
+				x = canPutInTerm(templateArr, x)
+
 				success := false
 				for i, temp := range templateArr[x] {
 					if temp == "000000" {
@@ -2614,6 +2637,8 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				if isCOOP == "true" && x == coopCoureseTerm {
 					x += 2
 				}
+
+				x = canPutInTerm(templateArr, x)
 
 				success := false
 				for i, temp := range templateArr[x] {
