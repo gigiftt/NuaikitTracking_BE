@@ -912,10 +912,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 		for _, c := range g.RequiredCourses {
 			reqCourseList = append(reqCourseList, model.CourseDetailResponse{
-				CourseNo:  c.CourseNo,
-				Credits:   c.Credits,
-				GroupName: groupName,
-				IsPass:    false,
+				CourseNo:      c.CourseNo,
+				Credits:       c.Credits,
+				GroupName:     groupName,
+				Prerequisites: c.Prerequisites,
+				Corequisite:   c.Corequisite,
+				IsPass:        false,
 			})
 			reqCredit += c.Credits
 		}
@@ -925,10 +927,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 			reqCredit += int(c.Get("credits").Int())
 			coopCourse = model.CourseDetailResponse{
-				CourseNo:  c.Get("courseNo").String(),
-				Credits:   int(c.Get("credits").Int()),
-				GroupName: "Major Required",
-				IsPass:    false,
+				CourseNo:      c.Get("courseNo").String(),
+				Credits:       int(c.Get("credits").Int()),
+				GroupName:     "Major Required",
+				Prerequisites: []string{},
+				Corequisite:   "",
+				IsPass:        false,
 			}
 
 			reqCourseList = append(reqCourseList, coopCourse)
@@ -984,10 +988,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 		for _, c := range g.RequiredCourses {
 
 			reqCourseList = append(reqCourseList, model.CourseDetailResponse{
-				CourseNo:  c.CourseNo,
-				Credits:   c.Credits,
-				GroupName: groupName,
-				IsPass:    false,
+				CourseNo:      c.CourseNo,
+				Credits:       c.Credits,
+				GroupName:     groupName,
+				Prerequisites: c.Prerequisites,
+				Corequisite:   c.Corequisite,
+				IsPass:        false,
 			})
 			reqCredit += c.Credits
 		}
@@ -1054,10 +1060,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 							if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
 								courseList = append(courseList, model.CourseDetailResponse{
-									CourseNo:  code.String(),
-									Credits:   int(credit),
-									GroupName: group,
-									IsPass:    true,
+									CourseNo:      code.String(),
+									Credits:       int(credit),
+									Prerequisites: []string{},
+									Corequisite:   "",
+									GroupName:     group,
+									IsPass:        true,
 								})
 							} else {
 
@@ -1069,10 +1077,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 								}
 
 								courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-									CourseNo:  code.String(),
-									Credits:   int(credit),
-									GroupName: group,
-									IsPass:    true,
+									CourseNo:      code.String(),
+									Credits:       int(credit),
+									Prerequisites: []string{},
+									Corequisite:   "",
+									GroupName:     group,
+									IsPass:        true,
 								})
 							}
 
@@ -1096,10 +1106,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 								if gjson.Get(template, `coreCategory.#(groupName="Core").electiveCourseList.#`).Int() == 0 {
 									courseList = append(courseList, model.CourseDetailResponse{
-										CourseNo:  code.String(),
-										Credits:   int(credit),
-										GroupName: group,
-										IsPass:    true,
+										CourseNo:      code.String(),
+										Credits:       int(credit),
+										Prerequisites: []string{},
+										Corequisite:   "",
+										GroupName:     group,
+										IsPass:        true,
 									})
 								} else {
 
@@ -1111,10 +1123,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-										CourseNo:  code.String(),
-										Credits:   int(credit),
-										GroupName: group,
-										IsPass:    true,
+										CourseNo:      code.String(),
+										Credits:       int(credit),
+										Prerequisites: []string{},
+										Corequisite:   "",
+										GroupName:     group,
+										IsPass:        true,
 									})
 								}
 
@@ -1146,10 +1160,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 								if gjson.Get(template, `majorCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
 									courseList = append(courseList, model.CourseDetailResponse{
-										CourseNo:  code.String(),
-										Credits:   int(credit),
-										GroupName: group,
-										IsPass:    true,
+										CourseNo:      code.String(),
+										Credits:       int(credit),
+										Prerequisites: []string{},
+										Corequisite:   "",
+										GroupName:     group,
+										IsPass:        true,
 									})
 								} else {
 
@@ -1161,10 +1177,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-										CourseNo:  code.String(),
-										Credits:   int(credit),
-										GroupName: group,
-										IsPass:    true,
+										CourseNo:      code.String(),
+										Credits:       int(credit),
+										Prerequisites: []string{},
+										Corequisite:   "",
+										GroupName:     group,
+										IsPass:        true,
 									})
 								}
 
@@ -1194,10 +1212,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 									if gjson.Get(template, `freeCategory.#(groupName="Free Elective").electiveCourseList.#`).Int() == 0 {
 										courseList = append(courseList, model.CourseDetailResponse{
-											CourseNo:  code.String(),
-											Credits:   int(credit),
-											GroupName: group,
-											IsPass:    true,
+											CourseNo:      code.String(),
+											Credits:       int(credit),
+											Prerequisites: []string{},
+											Corequisite:   "",
+											GroupName:     group,
+											IsPass:        true,
 										})
 									} else {
 
@@ -1209,10 +1229,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 										}
 
 										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-											CourseNo:  code.String(),
-											Credits:   int(credit),
-											GroupName: group,
-											IsPass:    true,
+											CourseNo:      code.String(),
+											Credits:       int(credit),
+											Prerequisites: []string{},
+											Corequisite:   "",
+											GroupName:     group,
+											IsPass:        true,
 										})
 									}
 
@@ -1225,10 +1247,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									log.Println("elective code.String() : ", code.String())
 									if gjson.Get(template, `geCategory.#(groupName="`+group+`").electiveCourseList.#`).Int() == 0 {
 										courseList = append(courseList, model.CourseDetailResponse{
-											CourseNo:  code.String(),
-											Credits:   int(credit),
-											GroupName: group,
-											IsPass:    true,
+											CourseNo:      code.String(),
+											Credits:       int(credit),
+											Prerequisites: []string{},
+											Corequisite:   "",
+											GroupName:     group,
+											IsPass:        true,
 										})
 									} else {
 
@@ -1240,10 +1264,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 										}
 
 										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
-											CourseNo:  code.String(),
-											Credits:   int(credit),
-											GroupName: group,
-											IsPass:    true,
+											CourseNo:      code.String(),
+											Credits:       int(credit),
+											Prerequisites: []string{},
+											Corequisite:   "",
+											GroupName:     group,
+											IsPass:        true,
 										})
 									}
 
