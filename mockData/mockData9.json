@@ -10,47 +10,47 @@
                "details":[
                   {
                      "code":"001101",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B"
                   },
                   {
                      "code":"140104",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"206161",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B"
                   },
                   {
                      "code":"207105",
-                     "credit":0,
+                     "credit":3,
                      "grade":"C+"
                   },
                   {
                      "code":"207115",
-                     "credit":0,
+                     "credit":1,
                      "grade":"A"
                   },
                   {
                      "code":"259104",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B"
                   },
                   {
                      "code":"259106",
-                     "credit":0,
+                     "credit":1,
                      "grade":"B+"
                   },
                   {
                      "code":"259191",
-                     "credit":0,
+                     "credit":1,
                      "grade":"S"
                   },
                   {
                      "code":"261103",
-                     "credit":0,
+                     "credit":3,
                      "grade":"A"
                   }
                ]
@@ -60,37 +60,37 @@
                "details":[
                   {
                      "code":"001102",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"109114",
-                     "credit":0,
+                     "credit":3,
                      "grade":"A"
                   },
                   {
                      "code":"206162",
-                     "credit":0,
+                     "credit":3,
                      "grade":"A"
                   },
                   {
                      "code":"207106",
-                     "credit":0,
+                     "credit":3,
                      "grade":"C+"
                   },
                   {
                      "code":"207116",
-                     "credit":0,
+                     "credit":1,
                      "grade":"A"
                   },
                   {
                      "code":"252281",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B"
                   },
                   {
                      "code":"261102",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   }
                ]
@@ -105,42 +105,42 @@
                "details":[
                   {
                      "code":"001201",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"206261",
-                     "credit":0,
+                     "credit":3,
                      "grade":"A"
                   },
                   {
                      "code":"211100",
-                     "credit":0,
+                     "credit":3,
                      "grade":"A"
                   },
                   {
                      "code":"261207",
-                     "credit":0,
+                     "credit":2,
                      "grade":"B+"
                   },
                   {
                      "code":"261210",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"261212",
-                     "credit":0,
+                     "credit":1,
                      "grade":"A"
                   },
                   {
                      "code":"261216",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"261217",
-                     "credit":0,
+                     "credit":3,
                      "grade":"F"
                   }
                ]
@@ -150,32 +150,32 @@
                "details":[
                   {
                      "code":"001225",
-                     "credit":0,
+                     "credit":3,
                      "grade":"C+"
                   },
                   {
                      "code":"261200",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"261208",
-                     "credit":0,
+                     "credit":3,
                      "grade":"C+"
                   },
                   {
                      "code":"261214",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   },
                   {
                      "code":"261215",
-                     "credit":0,
+                     "credit":1,
                      "grade":"A"
                   },
                   {
                      "code":"261332",
-                     "credit":0,
+                     "credit":3,
                      "grade":"B+"
                   }
                ]
