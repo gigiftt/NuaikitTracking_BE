@@ -9,48 +9,48 @@
                 "semester":1,
                 "details":[
                    {
-                      "code":"001101",
-                      "credit":0,
+                      "courseNo":"001101",
+
                       "grade":"B"
                    },
                    {
-                      "code":"140104",
-                      "credit":0,
+                      "courseNo":"140104",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"206161",
-                      "credit":0,
+                      "courseNo":"206161",
+
                       "grade":"F"
                    },
                    {
-                      "code":"207105",
-                      "credit":0,
+                      "courseNo":"207105",
+
                       "grade":"C+"
                    },
                    {
-                      "code":"207115",
-                      "credit":0,
+                      "courseNo":"207115",
+
                       "grade":"A"
                    },
                    {
-                      "code":"259104",
-                      "credit":0,
+                      "courseNo":"259104",
+
                       "grade":"B"
                    },
                    {
-                      "code":"259106",
-                      "credit":0,
+                      "courseNo":"259106",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"259191",
-                      "credit":0,
+                      "courseNo":"259191",
+
                       "grade":"S"
                    },
                    {
-                      "code":"261103",
-                      "credit":0,
+                      "courseNo":"261103",
+
                       "grade":"A"
                    }
                 ]
@@ -59,38 +59,38 @@
                 "semester":2,
                 "details":[
                    {
-                      "code":"001102",
-                      "credit":0,
+                      "courseNo":"001102",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"109114",
-                      "credit":0,
+                      "courseNo":"109114",
+
                       "grade":"A"
                    },
                    {
-                      "code":"206161",
-                      "credit":0,
+                      "courseNo":"206161",
+
                       "grade":"F"
                    },
                    {
-                      "code":"207106",
-                      "credit":0,
+                      "courseNo":"207106",
+
                       "grade":"C+"
                    },
                    {
-                      "code":"207116",
-                      "credit":0,
+                      "courseNo":"207116",
+
                       "grade":"A"
                    },
                    {
-                      "code":"252281",
-                      "credit":0,
+                      "courseNo":"252281",
+
                       "grade":"B"
                    },
                    {
-                      "code":"261102",
-                      "credit":0,
+                      "courseNo":"261102",
+
                       "grade":"B+"
                    }
                 ]
@@ -104,43 +104,43 @@
                 "semester":1,
                 "details":[
                    {
-                      "code":"001201",
-                      "credit":0,
+                      "courseNo":"001201",
+
                       "grade":"B+"
                    },
                    {
-                    "code":"206161",
-                    "credit":0,
+                    "courseNo":"206161",
+                    
                     "grade":"D"
                  },
                    {
-                      "code":"211100",
-                      "credit":0,
+                      "courseNo":"211100",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261207",
-                      "credit":0,
+                      "courseNo":"261207",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261210",
-                      "credit":0,
+                      "courseNo":"261210",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261212",
-                      "credit":0,
+                      "courseNo":"261212",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261216",
-                      "credit":0,
+                      "courseNo":"261216",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261217",
-                      "credit":0,
+                      "courseNo":"261217",
+
                       "grade":"B+"
                    }
                 ]
@@ -149,38 +149,38 @@
                 "semester":2,
                 "details":[
                    {
-                      "code":"001225",
-                      "credit":0,
+                      "courseNo":"001225",
+
                       "grade":"C+"
                    },
                    {
-                    "code":"206162",
-                    "credit":0,
+                    "courseNo":"206162",
+                    
                     "grade":"W"
                  },
                    {
-                      "code":"261200",
-                      "credit":0,
+                      "courseNo":"261200",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261214",
-                      "credit":0,
+                      "courseNo":"261214",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261215",
-                      "credit":0,
+                      "courseNo":"261215",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261218",
-                      "credit":0,
+                      "courseNo":"261218",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261332",
-                      "credit":0,
+                      "courseNo":"261332",
+
                       "grade":"B+"
                    }
                 ]
@@ -189,8 +189,8 @@
                 "semester":3,
                 "details":[
                    {
-                    "code":"206162",
-                    "credit":0,
+                    "courseNo":"206162",
+                    
                     "grade":"C"
                  }
                 ]
@@ -205,43 +205,43 @@
                 "semester":1,
                 "details":[
                    {
-                      "code":"201114",
-                      "credit":0,
+                      "courseNo":"201114",
+
                       "grade":"B+"
                    },
                    {
-                    "code":"206261",
-                    "credit":0,
+                    "courseNo":"206261",
+                    
                     "grade":"W"
                  },
                    {
-                      "code":"261304",
-                      "credit":0,
+                      "courseNo":"261304",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261335",
-                      "credit":0,
+                      "courseNo":"261335",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261336",
-                      "credit":0,
+                      "courseNo":"261336",
+
                       "grade":"B+"
                    },
                    {
-                      "code":"261342",
-                      "credit":0,
+                      "courseNo":"261342",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261343",
-                      "credit":0,
+                      "courseNo":"261343",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261494",
-                      "credit":0,
+                      "courseNo":"261494",
+
                       "grade":"A"
                    }
                 ]
@@ -250,33 +250,33 @@
                 "semester":2,
                 "details":[
                     {
-                        "code":"206261",
-                        "credit":0,
+                        "courseNo":"206261",
+  
                         "grade":"W"
                      },
                    {
-                      "code":"259194",
-                      "credit":0,
+                      "courseNo":"259194",
+
                       "grade":"S"
                    },
                    {
-                      "code":"261111",
-                      "credit":0,
+                      "courseNo":"261111",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261305",
-                      "credit":0,
+                      "courseNo":"261305",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261361",
-                      "credit":0,
+                      "courseNo":"261361",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261441",
-                      "credit":0,
+                      "courseNo":"261441",
+
                       "grade":"A"
                    }
                 ]
@@ -290,33 +290,33 @@
                 "semester":1,
                 "details":[
                     {
-                        "code":"206261",
-                        "credit":0,
+                        "courseNo":"206261",
+  
                         "grade":"C"
                      },
                    {
-                      "code":"261449",
-                      "credit":0,
+                      "courseNo":"261449",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261458",
-                      "credit":0,
+                      "courseNo":"261458",
+
                       "grade":"W"
                    },
                    {
-                      "code":"261470",
-                      "credit":0,
+                      "courseNo":"261470",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261491",
-                      "credit":0,
+                      "courseNo":"261491",
+
                       "grade":"S"
                    },
                    {
-                      "code":"357101",
-                      "credit":0,
+                      "courseNo":"357101",
+
                       "grade":"W"
                    }
                 ]
@@ -325,38 +325,38 @@
                 "semester":2,
                 "details":[
                     {
-                        "code":"206261",
-                        "credit":0,
+                        "courseNo":"206261",
+  
                         "grade":"W"
                      },
                      {
-                        "code":"261208",
-                        "credit":0,
+                        "courseNo":"261208",
+  
                         "grade":"W"
                      },
                      {
-                        "code":"259192",
-                        "credit":0,
+                        "courseNo":"259192",
+  
                         "grade":"S"
                      },
                    {
-                      "code":"261405",
-                      "credit":0,
+                      "courseNo":"261405",
+
                       "grade":"A"
                    },
                    {
-                      "code":"261459",
-                      "credit":0,
+                      "courseNo":"261459",
+
                       "grade":"F"
                    },
                    {
-                      "code":"261492",
-                      "credit":0,
+                      "courseNo":"261492",
+
                       "grade":"A"
                    },
                    {
-                      "code":"361100",
-                      "credit":0,
+                      "courseNo":"361100",
+
                       "grade":"A"
                    }
                 ]
@@ -365,13 +365,13 @@
                 "semester":3,
                 "details":[
                     {
-                        "code":"357101",
-                        "credit":0,
+                        "courseNo":"357101",
+  
                         "grade":"A"
                      },
                      {
-                        "code":"357792",
-                        "credit":0,
+                        "courseNo":"357792",
+  
                         "grade":"A"
                      }
                 ]
@@ -385,13 +385,13 @@
               "semester":1,
               "details":[
                  {
-                    "code":"261421",
-                    "credit":0,
+                    "courseNo":"261421",
+                    
                     "grade":"A"
                  },
                  {
-                    "code":"261437",
-                    "credit":0,
+                    "courseNo":"261437",
+                    
                     "grade":"A"
                  }
               ]
@@ -400,17 +400,17 @@
             "semester":2,
             "details":[
                 {
-                    "code":"201114",
-                    "credit":0,
+                    "courseNo":"201114",
+                    
                     "grade":"A"
                  },{
-                  "code":"261208",
-                  "credit":0,
+                  "courseNo":"261208",
+                  
                   "grade":"A"
                },
                {
-                  "code":"261306",
-                  "credit":0,
+                  "courseNo":"261306",
+                  
                   "grade":"A"
                }
             ]
