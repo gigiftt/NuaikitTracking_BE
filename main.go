@@ -112,19 +112,6 @@ func getCirriculum(year string, curriculumProgram string, isCOOP string) (string
 		return "", err
 	}
 
-	// jsonFile, err := os.Open("cirriculum.json")
-	// // if we os.Open returns an error then handle it
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// // defer the closing of our jsonFile so that we can parse it later on
-	// defer jsonFile.Close()
-
-	// c, error := ioutil.ReadAll(jsonFile)
-	// if error != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// }
-
 	return string(c), nil
 }
 
@@ -217,26 +204,6 @@ func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYe
 		return "", model.CurriculumModel{}, err
 	}
 
-	// jsonFile, err := os.Open("y" + studyYear + "t" + studySemester + ".json")
-	// // if we os.Open returns an error then handle it
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// // defer the closing of our jsonFile so that we can parse it later on
-	// defer jsonFile.Close()
-
-	// c, error := ioutil.ReadAll(jsonFile)
-	// if error != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// }
-
-	// term := model.CurriculumModel{}
-	// err = json.Unmarshal(c, &term)
-	// if err != nil {
-	// 	log.Fatalln("Error is : ", err)
-	// 	return "", model.CurriculumModel{}, err
-	// }
-
 	return string(c), term, nil
 
 }
@@ -282,25 +249,7 @@ func getCourseDetail(courseNo string) (model.GetCourseDetail, error) {
 	}
 
 	return detail, nil
-	// cc := []model.CourseDetail{}
-	// c := model.CourseDetail{
-	// 	CourseNo:              courseNo,
-	// 	UpdatedYear:           0,
-	// 	UpdatedSemester:       0,
-	// 	CourseNameEN:          "",
-	// 	CourseNameTH:          "",
-	// 	CurCodeEN:             "",
-	// 	CurCodeTH:             "",
-	// 	DetailEN:              "",
-	// 	DetailTH:              "",
-	// 	Credits:               model.CreditDetail{},
-	// 	SelectedTopicSubjects: []model.SelectedTopicSubjectDetail{},
-	// }
-	// cc = append(cc, c)
-	// return model.GetCourseDetail{
-	// 	Ok:           false,
-	// 	CourseDetail: cc,
-	// }, nil
+
 }
 
 func getRawTranscript(studentId string) (model.CourseGrade, error) {
