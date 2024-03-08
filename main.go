@@ -859,7 +859,7 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 	return t, nil
 }
 
-func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (string, int, string, error) {
+func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (string, int, string, []int, error) {
 
 	transcript := ""
 	if studentId == "" {
@@ -1027,7 +1027,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 	template := string(tt)
 
 	summaryCredits := 0
-
+	var numOfTerm []int
 	if transcript != "" {
 
 		yearList := gjson.Get(transcript, "transcript.#.year")
@@ -1073,7 +1073,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 								categoryDetail := model.CategoryDetail{}
 								err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 								if err != nil {
-									return "", 0, "", err
+									return "", 0, "", []int{}, err
 								}
 
 								courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1119,7 +1119,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									categoryDetail := model.CategoryDetail{}
 									err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 									if err != nil {
-										return "", 0, "", err
+										return "", 0, "", []int{}, err
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1173,7 +1173,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 									categoryDetail := model.CategoryDetail{}
 									err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 									if err != nil {
-										return "", 0, "", err
+										return "", 0, "", []int{}, err
 									}
 
 									courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1225,7 +1225,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 										categoryDetail := model.CategoryDetail{}
 										err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 										if err != nil {
-											return "", 0, "", err
+											return "", 0, "", []int{}, err
 										}
 
 										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1260,7 +1260,7 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 										categoryDetail := model.CategoryDetail{}
 										err := json.Unmarshal([]byte(oldValue), &categoryDetail)
 										if err != nil {
-											return "", 0, "", err
+											return "", 0, "", []int{}, err
 										}
 
 										courseList = append(categoryDetail.ElectiveCourseList, model.CourseDetailResponse{
@@ -1287,10 +1287,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 				i++
 			}
+
+			numOfTerm = append(numOfTerm, i-1)
 		}
 	}
 
-	return template, summaryCredits, isCOOP, nil
+	return template, summaryCredits, isCOOP, numOfTerm, nil
 
 }
 
@@ -2748,7 +2750,7 @@ func main() {
 		cirriculumJSON, _ := getCirriculumJSON(year, curriculumProgram, isCOOP)
 		curriculumString, _ := getCirriculum(year, curriculumProgram, isCOOP)
 
-		template, summaryCredits, isCoop, err := getCategoryTemplate(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
+		template, summaryCredits, isCoop, numOfTerm, err := getCategoryTemplate(cirriculumJSON, curriculumString, isCOOP, studentId, mockData)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
@@ -2761,6 +2763,7 @@ func main() {
 
 		reponse.IsCoop = isCoop
 		reponse.SummaryCredits = summaryCredits
+		reponse.NumOfTerm = numOfTerm
 
 		return c.JSON(http.StatusOK, reponse)
 

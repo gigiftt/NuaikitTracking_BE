@@ -46,6 +46,7 @@ type CategoryResponse struct {
 	SummaryCredits  int              `json:"summaryCredit"`
 	IsCoop          string           `json:"isCoop"`
 	RequiredCredits int              `json:"requiredCredits"`
+	NumOfTerm       []int            `json:"number of term"`
 	CoreCategory    []CategoryDetail `json:"coreCategory"`
 	MajorCategory   []CategoryDetail `json:"majorCategory"`
 	GECategory      []CategoryDetail `json:"geCategory"`
