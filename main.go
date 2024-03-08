@@ -673,17 +673,23 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 
 func canPutInTerm(templateArr [][]string, term int) int {
 	num := 0
-	for _, c := range templateArr[term] {
-		if c != "000000" && c != "111111" {
-			num++
+
+	if term < len(templateArr) {
+		for _, c := range templateArr[term] {
+			if c != "000000" && c != "111111" {
+				num++
+			}
+		}
+
+		if num > 6 {
+			return canPutInTerm(templateArr, term+1)
+		} else {
+			return term
 		}
 	}
 
-	if num > 6 {
-		return canPutInTerm(templateArr, term+1)
-	} else {
-		return term
-	}
+	return term
+
 }
 
 func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP string, studentId string, mockData string) (model.CategoryResponseV2, error) {
@@ -2659,6 +2665,19 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					log.Println("x : ", x)
 					x = canPutInTerm(templateArr, x)
 					log.Println("x : ", x)
+					if x >= len(templateArr) {
+						lenX := len(templateArr[x-1])
+						term := []string{}
+						term2 := []string{}
+						for k := 0; k < lenX; k++ {
+							term = append(term, "000000")
+							term2 = append(term2, "000000")
+						}
+
+						templateArr = append(templateArr, term)
+						templateArr = append(templateArr, term2)
+
+					}
 
 					success := false
 					for i, temp := range templateArr[x] {
@@ -2719,6 +2738,20 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 				x = canPutInTerm(templateArr, x)
 
+				if x >= len(templateArr) {
+					lenX := len(templateArr[x-1])
+					term := []string{}
+					term2 := []string{}
+					for k := 0; k < lenX; k++ {
+						term = append(term, "000000")
+						term2 = append(term2, "000000")
+					}
+
+					templateArr = append(templateArr, term)
+					templateArr = append(templateArr, term2)
+
+				}
+
 				success := false
 				for i, temp := range templateArr[x] {
 					if temp == "000000" {
@@ -2774,6 +2807,20 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				}
 
 				x = canPutInTerm(templateArr, x)
+
+				if x >= len(templateArr) {
+					lenX := len(templateArr[x-1])
+					term := []string{}
+					term2 := []string{}
+					for k := 0; k < lenX; k++ {
+						term = append(term, "000000")
+						term2 = append(term2, "000000")
+					}
+
+					templateArr = append(templateArr, term)
+					templateArr = append(templateArr, term2)
+
+				}
 
 				success := false
 				for i, temp := range templateArr[x] {
