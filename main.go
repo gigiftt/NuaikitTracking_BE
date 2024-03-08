@@ -35,7 +35,7 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func readMockData(mockFile string) string {
+func readMockData(mockFile string) model.CourseGrade {
 	jsonFile, err := os.Open("./mockData/" + mockFile + ".json")
 	// if we os.Open returns an error then handle it
 	if err != nil {
@@ -49,7 +49,15 @@ func readMockData(mockFile string) string {
 		log.Fatalln("Error is : ", err)
 	}
 
-	return string(c)
+	courseGrade := model.CourseGrade{}
+
+	err = json.Unmarshal(c, &courseGrade)
+	if err != nil {
+		log.Fatalln("Error is : ", err)
+		return model.CourseGrade{}
+	}
+
+	return courseGrade
 }
 
 func readElectiveData(electiveFile string) string {
@@ -562,6 +570,117 @@ func getTranscriptWithCredit(studentId string) model.StudentTranscript {
 	return transcriptFinal
 }
 
+func getTranscriptWithCreditv2(studentId string, rawTranscript model.CourseGrade) model.StudentTranscript {
+
+	split := strings.SplitAfter(studentId, "")
+	idText := "25" + split[0] + split[1]
+	idNum, _ := strconv.Atoi(idText)
+
+	courseGrade := map[int]map[int][]model.TranscriptCourse{}
+
+	for _, c := range rawTranscript.CourseGrades {
+
+		detail, err := getCourseDetail(c.CourseNo)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		credit := 3
+		if len(detail.CourseDetail) != 0 {
+			credit = detail.CourseDetail[0].Credits.Credits
+		}
+
+		semesterList, b := courseGrade[c.Year]
+		if b {
+			courseList, b := semesterList[c.Semester]
+			if b {
+				courseList = append(courseList, model.TranscriptCourse{
+					Code:   c.CourseNo,
+					Credit: credit,
+					Grade:  c.Grade,
+				})
+
+				courseGrade[c.Year][c.Semester] = courseList
+
+			} else {
+				courses := []model.TranscriptCourse{}
+				courses = append(courses, model.TranscriptCourse{
+					Code:   c.CourseNo,
+					Credit: credit,
+					Grade:  c.Grade,
+				})
+
+				semesterList[c.Semester] = courses
+				courseGrade[c.Year] = semesterList
+
+			}
+
+		} else {
+			courses := []model.TranscriptCourse{}
+			courses = append(courses, model.TranscriptCourse{
+				Code:   c.CourseNo,
+				Credit: credit,
+				Grade:  c.Grade,
+			})
+			semesterList = map[int][]model.TranscriptCourse{}
+			semesterList[c.Semester] = courses
+			courseGrade[c.Year] = semesterList
+		}
+	}
+
+	transcriptYear := []model.TranscriptYear{}
+
+	for i := 0; i < len(courseGrade); i++ {
+		transcriptSemester := []model.TranscriptSemester{}
+
+		_, b := courseGrade[idNum]
+		if b {
+
+			for j := 1; j <= len(courseGrade[idNum]); j++ {
+				log.Println("id Num : ", idNum)
+				log.Println("j: ", j)
+				detail, b := courseGrade[idNum][j]
+				if b {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  detail,
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				} else {
+					semesterDetail := model.TranscriptSemester{
+						Semester: j,
+						Details:  []model.TranscriptCourse{},
+					}
+					transcriptSemester = append(transcriptSemester, semesterDetail)
+				}
+			}
+
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			idNum++
+
+			transcriptYear = append(transcriptYear, yearDetail)
+		} else {
+			yearDetail := model.TranscriptYear{
+				Year:        idNum,
+				YearDetails: transcriptSemester,
+			}
+			transcriptYear = append(transcriptYear, yearDetail)
+		}
+
+	}
+
+	transcriptFinal := model.StudentTranscript{
+		Status:     true,
+		StudentId:  studentId,
+		Transcript: transcriptYear,
+	}
+
+	return transcriptFinal
+}
+
 func checkGroup(cirriculum string, courseNo string) (string, string) {
 
 	groupList := gjson.Get(cirriculum, "curriculum.geGroups.#.groupName")
@@ -623,7 +742,20 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 	transcript := ""
 	transcriptModel := model.StudentTranscript{}
 	if studentId == "" {
-		transcript = readMockData(mockData)
+		tsc := readMockData(mockData)
+
+		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
 
 	} else {
 		transcriptModel = getTranscriptWithCredit(studentId)
@@ -863,7 +995,20 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 
 	transcript := ""
 	if studentId == "" {
-		transcript = readMockData(mockData)
+		tsc := readMockData(mockData)
+
+		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
 
 	} else {
 		transcriptModel := getTranscriptWithCredit(studentId)
@@ -1954,7 +2099,20 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	transcript := ""
 
 	if studentId == "" {
-		transcript = readMockData(mockData)
+		tsc := readMockData(mockData)
+
+		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+
+		tm, err := json.Marshal(transcriptModel)
+		if err != nil {
+			log.Fatalln("Error is : ", err)
+		}
+
+		transcript = string(tm)
+
+		if !transcriptModel.Status {
+			transcript = ""
+		}
 	} else {
 		transcriptModel := getTranscriptWithCredit(studentId)
 		tm, err := json.Marshal(transcriptModel)
