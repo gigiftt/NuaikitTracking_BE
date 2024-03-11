@@ -709,7 +709,12 @@ func getSummaryCredits(c model.CurriculumModel, curriculumString string, isCOOP 
 	if studentId == "" {
 		tsc := readMockData(mockData)
 
-		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+		id := "630610727"
+		if mockData == "mockData6" {
+			id = "650610727"
+		}
+
+		transcriptModel := getTranscriptWithCreditv2(id, tsc)
 
 		tm, err := json.Marshal(transcriptModel)
 		if err != nil {
@@ -962,8 +967,12 @@ func getCategoryTemplate(c model.CurriculumModel, curriculumString string, isCOO
 	if studentId == "" {
 		tsc := readMockData(mockData)
 
-		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+		id := "630610727"
+		if mockData == "mockData6" {
+			id = "650610727"
+		}
 
+		transcriptModel := getTranscriptWithCreditv2(id, tsc)
 		tm, err := json.Marshal(transcriptModel)
 		if err != nil {
 			log.Fatalln("Error is : ", err)
@@ -2066,7 +2075,12 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 	if studentId == "" {
 		tsc := readMockData(mockData)
 
-		transcriptModel := getTranscriptWithCreditv2("630610727", tsc)
+		id := "630610727"
+		if mockData == "mockData6" {
+			id = "650610727"
+		}
+
+		transcriptModel := getTranscriptWithCreditv2(id, tsc)
 
 		tm, err := json.Marshal(transcriptModel)
 		if err != nil {
@@ -2107,7 +2121,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 	i := 0
 	x := 0
-	// for คนยังไม่ได้เรียน
 
 	// term template according to plan
 	// loop year
@@ -2564,6 +2577,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 				}
 
 				// เก็บถึงเทอมที่เรียนเสร็จ
+				log.Println("term : ", t)
 				numOfTerm = append(numOfTerm, t)
 				allStudyTerm += t
 			}
