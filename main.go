@@ -671,18 +671,28 @@ func checkGroup(cirriculum string, courseNo string) (string, string) {
 	return "Free", "electiveCourses"
 }
 
-func canPutInTerm(templateArr [][]string, term int) int {
+func canPutInTerm(templateArr [][]string, term int, coopTerm int, listOfCourse map[string]*model.CurriculumCourseDetail2) int {
 	num := 0
+
+	if term == coopTerm {
+		term++
+	}
 
 	if term < len(templateArr) {
 		for _, c := range templateArr[term] {
 			if c != "000000" && c != "111111" {
-				num++
+				detail, b := listOfCourse[c]
+				if b {
+					num += detail.Credits
+				} else {
+					num += 3
+				}
 			}
-		}
 
-		if num > 6 {
-			return canPutInTerm(templateArr, term+1)
+		}
+		log.Println("num : ", num)
+		if num >= 21 {
+			return canPutInTerm(templateArr, term+1, coopTerm, listOfCourse)
 		} else {
 			return term
 		}
@@ -2663,7 +2673,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					}
 
 					log.Println("x : ", x)
-					x = canPutInTerm(templateArr, x)
+					x = canPutInTerm(templateArr, x, coopCoureseTerm, listOfCourse)
 					log.Println("x : ", x)
 					if x >= len(templateArr) {
 						lenX := len(templateArr[x-1])
@@ -2736,7 +2746,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					x += 2
 				}
 
-				x = canPutInTerm(templateArr, x)
+				x = canPutInTerm(templateArr, x, coopCoureseTerm, listOfCourse)
 
 				if x >= len(templateArr) {
 					lenX := len(templateArr[x-1])
@@ -2806,7 +2816,7 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 					x += 2
 				}
 
-				x = canPutInTerm(templateArr, x)
+				x = canPutInTerm(templateArr, x, coopCoureseTerm, listOfCourse)
 
 				if x >= len(templateArr) {
 					lenX := len(templateArr[x-1])
