@@ -208,6 +208,23 @@ func getTermDetail(year string, curriculumProgram string, isCOOP string, studyYe
 
 }
 
+func readTermData(year string, term string) string {
+	jsonFile, err := os.Open("./y" + year + "t" + term + "_68.json")
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	c, error := ioutil.ReadAll(jsonFile)
+	if error != nil {
+		log.Fatalln("Error is : ", err)
+	}
+
+	return string(c)
+}
+
 func getCourseDetail(courseNo string) (model.GetCourseDetail, error) {
 	client := &http.Client{}
 
@@ -1592,6 +1609,7 @@ func putInTemplate(templateArr [][]string, x int, corequisiteList []string, noPr
 				}
 			}
 
+			// ให้ headCourse เป็นตัว preList ที่มี PreReqCourseList หรือ ถ้าไม่มีก็เป็นตัวไหนก็ได้
 			if headCourse == "" {
 				for key, value := range thisPreList {
 					if !value.Move {
@@ -1901,10 +1919,12 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 
 		detail, b := listOfCourse[templateArr[l+2][updateIndex]]
 		if bb && len(detail.Prerequisites) != 0 {
+
 			templateArr[l][updateIndex] = "111111"
 			if l == x {
 				templateArr[l+1][updateIndex] = "111111"
 			}
+
 		} else {
 			if b {
 				if len(detail.Prerequisites) != 0 {
@@ -2005,7 +2025,7 @@ func updateTemplate(templateArr [][]string, x int, numberTerm int, updateIndex i
 		// update เส้นเชื่อสำหรับตัวที่ผ่านแล้ว แต่อีกตัวไม่ผ่าน
 		if b {
 		}
-		if b && len(preReq.Prerequisites) == 2 {
+		if b && len(preReq.Prerequisites) > 1 {
 			for _, preReq := range preReq.Prerequisites {
 				col, index := checkTermAndIndex(templateArr, preReq)
 
@@ -2124,10 +2144,12 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 	// term template according to plan
 	// loop year
+	// i = year
 	for i < 4 {
 
 		j := 0
 		// loop term
+		// j = term
 		for j < 2 {
 
 			log.Println("x : ", x)
@@ -2135,7 +2157,13 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 			term := []string{}
 			noPreList := []string{}
 
-			termString, _, _ := getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i+1), strconv.Itoa(j+1))
+			termString := ""
+			if year == "2568" {
+				termString = readTermData(strconv.Itoa(i+1), strconv.Itoa(j+1))
+			} else {
+				termString, _, _ = getTermDetail(year, curriculumProgram, isCOOP, strconv.Itoa(i+1), strconv.Itoa(j+1))
+
+			}
 
 			if x != 0 {
 
@@ -2324,6 +2352,10 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 		elective = readElectiveData("freeCoopPlan")
 	}
 
+	if year == "2568" {
+		elective = readElectiveData("freeNormalPlan68")
+	}
+
 	requiredRow := len(templateArr[0])
 
 	// get requirded credit of elective course
@@ -2506,7 +2538,6 @@ func getTermTemplateV2(year string, curriculumProgram string, isCOOP string, stu
 
 								// loop เลื่อน course ที่ยังไม่ได้เรียน
 								// check ใน แถวที่เลื่อนว่าตัวไหนมี pre
-								// if t != 1 && len(termList) != 3 && !slices.Contains[[]string](summerList, temp) {
 
 								if len(termList) == 3 && t == 1 && slices.Contains[[]string](summerList, temp) {
 									// สำหรับการณีที่มี summer และเป็น term 2 และเรียนใน summer

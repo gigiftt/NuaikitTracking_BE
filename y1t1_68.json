@@ -1,0 +1,124 @@
+{
+    "ok": true,
+    "curriculum": {
+      "curriculumProgram": "CPE",
+      "year": 2563,
+      "isCOOPPlan": false,
+      "requiredCredits": 139,
+      "freeElectiveCredits": 6,
+      "coreAndMajorGroups": [
+        {
+          "requiredCredits": 33,
+          "groupName": "Core",
+          "requiredCourses": [
+            {
+              "courseNo": "206161",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            },
+            {
+              "courseNo": "207105",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            },
+            {
+              "courseNo": "207115",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 1
+            },
+            {
+              "courseNo": "208150",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            }
+          ],
+          "electiveCourses": []
+        },
+        {
+          "requiredCredits": 52,
+          "groupName": "Major Required",
+          "requiredCourses": [
+            {
+              "courseNo": "261103",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            }
+          ],
+          "electiveCourses": []
+        },
+        {
+          "requiredCredits": 18,
+          "groupName": "Major Elective",
+          "requiredCourses": [],
+          "electiveCourses": []
+        }
+      ],
+      "geGroups": [
+        {
+          "requiredCredits": 15,
+          "groupName": "Learner Person",
+          "requiredCourses": [
+            {
+              "courseNo": "001101",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            }
+          ],
+          "electiveCourses": []
+        },
+        {
+          "requiredCredits": 4,
+          "groupName": "Co-Creator",
+          "requiredCourses": [],
+          "electiveCourses": []
+        },
+        {
+          "requiredCredits": 4,
+          "groupName": "Active Citizen",
+          "requiredCourses": [
+            {
+              "courseNo": "140104",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 3
+            },
+            {
+              "courseNo": "259191",
+              "recommendSemester": 1,
+              "recommendYear": 1,
+              "prerequisites": [],
+              "corequisite": null,
+              "credits": 1
+            }
+          ],
+          "electiveCourses": []
+        },
+        {
+          "requiredCredits": 7,
+          "groupName": "Elective",
+          "requiredCourses": [],
+          "electiveCourses": []
+        }
+      ]
+    }
+  }
